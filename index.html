@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Ltome-Katip Project</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8">
+
+  <!-- Load Leaflet code library -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+  <!-- Load jQuery and PapaParse to read data from a CSV file -->
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
+
+  <!-- Position the map with CSS -->
+  <style>
+    body { margin:0; padding:0; }
+    #map { position: absolute; top:0; bottom:0; right:0; left:0; }
+    .popup-content img { width: 100px; height: auto; }
+  </style>
+
+</head>
+<body>
+
+  <!-- Map Container -->
+  <div id="map"></div>
+
+  <script>
+    // Set up initial map center and zoom level
+    var map = L.map('map', {
+      center: [41.57, -72.69], // Change to appropriate center point
+      zoom: 9,
+      scrollWheelZoom: false,
+      tap: false
+    });
+
+    // Control panel for basemaps
+    var controlLayers = L.control.layers(null, null, {
+      position: "topright",
+      collapsed: false
+    }).addTo(map);
+
+    // Add Carto Light basemap
+    var light = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attribution">CARTO</a>'
+    }).addTo(map);
+    controlLayers.addBaseLayer(light, 'Carto Light basemap');
+
+    // Add Stamen Terrain basemap
+    var terrain = L.tileLayer('https://stamen-tiles.a.ssl.fastly.net/terrain/{z}/{x}/{y}.png', {
+      attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
+    });
+    controlLayers.addBaseLayer(terrain, 'Stamen Terrain basemap');
+
+    // Function to play audio
+    function playAudio(audioURL) {
+      const audio = new Audio(audioURL);
+      audio.play();
+    }
+
+    // Read markers data from CSV file
+    $.get('./data.csv', function(csvString) {
+      // Use PapaParse to parse CSV string to array of objects
+      var data = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
+
+      // Loop through each row of data
+      data.forEach(function(row) {
+        // Check if required fields are present
+        if (row.Latitude && row.Longitude && row['Site Name'] && row.Audio && row.Photo && row.Marker) {
+          // Create custom icon
+          var customIcon = L.icon({
+            iconUrl: row.Marker,
+            iconSize: [30, 30], // Adjust as needed
+            iconAnchor: [15, 30], // Adjust as needed
+            popupAnchor: [0, -30]
+          });
+
+          // Create marker with custom icon
+          var marker = L.marker([row.Latitude, row.Longitude], { icon: customIcon }).addTo(map);
+
+          // Bind popup with Site Name, Photo, and Audio button
+          // Bind popup with Site Name, Photo, Sound Label, and Audio button
+marker.bindPopup(`
+  <div class="popup-content">
+    <b>${row['Site Name']}</b><br>
+    <img src="${row.Photo}" alt="Photo of ${row['Site Name']}"><br>
+    <p>Sound Label: ${row['Sound Label']}</p>
+    <button onclick="playAudio('${row.Audio}')">Play Audio</button>
+  </div>
+`);
+    
+        }
+      });
+    });
+
+    // Set attribution
+    map.attributionControl.setPrefix(
+      'View <a href="https://github.com/HandsOnDataViz/leaflet-map-csv" target="_blank">code on GitHub</a>'
+    );
+  </script>
+</body>
+</html>
