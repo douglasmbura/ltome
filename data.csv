@@ -1,3 +1,0 @@
-site-name,latitude,longitude,altitude,sound-label,audio,photo,marker
-"Site 1",-1.2921,36.8219,1795,"Elephant Trumpet","assets/sounds/elephant.wav","assets/photos/site1.jpg","custom-marker"
-"Site 2",-1.286389,36.817223,1795,"Hyena Laugh","assets/sounds/hyena.wav","assets/photos/site2.jpg","custom-marker"
