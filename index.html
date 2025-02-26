@@ -97,12 +97,31 @@
     controlLayers.addBaseLayer(terrain, 'Terrain');
     controlLayers.addBaseLayer(satellite, 'Satellite');
 
-    // OpenWeatherMap Layer (Replace 'YOUR_OPENWEATHERMAP_API_KEY' with actual API key)
+    // OpenWeatherMap Layer
     var precipitationLayer = L.OWM.precipitationClassic({ appId: '740f4a49812c1dc35213618727748e3c', opacity: 0.5 });
     var temperatureLayer = L.OWM.temperature({ appId: '740f4a49812c1dc35213618727748e3c', opacity: 0.5 });
 
     controlLayers.addOverlay(precipitationLayer, "Precipitation");
     controlLayers.addOverlay(temperatureLayer, "Temperature");
+
+    // Load Samburu County Boundary (GeoJSON)
+    fetch('./samburu_county.geojson')  // Replace with the path to your GeoJSON file
+      .then(response => response.json())
+      .then(data => {
+        var samburuBoundary = L.geoJSON(data, {
+          style: {
+            color: '#ff7800',
+            weight: 2,
+            fillOpacity: 0.1
+          },
+          onEachFeature: function(feature, layer) {
+            layer.bindPopup(`<b>Samburu County</b>`);
+          }
+        });
+
+        // Add Samburu Boundary to Layer Control
+        controlLayers.addOverlay(samburuBoundary, "Samburu County Boundary");
+      });
 
     // Function to play audio
     function playAudio(audioURL) {
