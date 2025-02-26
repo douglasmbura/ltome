@@ -19,6 +19,9 @@
   <!-- Wavesurfer.js Library -->
   <script src="https://unpkg.com/wavesurfer.js"></script>
 
+  <!-- Font Awesome for Play/Pause Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
+
   <!-- Custom Styles for Map and Navbar -->
   <style>
     body { margin: 0; padding: 0; }
@@ -158,7 +161,7 @@
       });
 
     // Function to initialize Wavesurfer.js
-    function initWavesurfer(audioURL, containerId) {
+    function initWavesurfer(audioURL, containerId, playPauseId) {
       var wavesurfer = WaveSurfer.create({
         container: `#${containerId}`,
         waveColor: '#00bfff',
@@ -168,8 +171,19 @@
       });
       wavesurfer.load(audioURL);
 
+      // Get the play/pause button
+      var playPauseButton = document.getElementById(playPauseId);
+
+      // Update button text and icon based on playback state
+      wavesurfer.on('play', function() {
+        playPauseButton.innerHTML = '<i class="fas fa-pause"></i> Pause';
+      });
+      wavesurfer.on('pause', function() {
+        playPauseButton.innerHTML = '<i class="fas fa-play"></i> Play';
+      });
+
       // Add play/pause button functionality
-      document.getElementById(`play-pause-${containerId}`).addEventListener('click', function() {
+      playPauseButton.addEventListener('click', function() {
         wavesurfer.playPause();
       });
 
@@ -189,7 +203,7 @@
           });
           var marker = L.marker([row.Latitude, row.Longitude], { icon: customIcon }).addTo(map);
 
-          // Unique ID for each waveform container
+          // Unique ID for each waveform container and play/pause button
           var waveformId = `waveform-${index}`;
           var playPauseId = `play-pause-${waveformId}`;
 
@@ -199,13 +213,13 @@
               <img src="${row.Photo}" alt="Photo of ${row['Site Name']}"><br>
               <b>Sound: ${row['Sound Label']}</b><br>
               <div id="${waveformId}" class="waveform"></div>
-              <button id="${playPauseId}">Play/Pause</button>
+              <button id="${playPauseId}"><i class="fas fa-play"></i> Play</button>
             </div>
           `);
 
           // Initialize Wavesurfer when the popup opens
           marker.on('popupopen', function() {
-            initWavesurfer(row.Audio, waveformId);
+            initWavesurfer(row.Audio, waveformId, playPauseId);
           });
         }
       });
