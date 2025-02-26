@@ -50,7 +50,29 @@
       margin-left: 50px;
     }
 
-    .popup-content img { width: 100px; height: auto; }
+    /* Improved Popup Styles */
+    .popup-content {
+      text-align: center; /* Center-align all content */
+    }
+    .popup-content img {
+      max-width: 200px; /* Set a maximum width for the image */
+      height: auto; /* Maintain aspect ratio */
+      display: block; /* Ensure the image is centered */
+      margin: 0 auto 10px; /* Center the image and add spacing below */
+      border-radius: 8px; /* Optional: Add rounded corners */
+    }
+    .popup-content button {
+      background-color: #00bfff; /* Style the button */
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px; /* Add spacing above the button */
+    }
+    .popup-content button:hover {
+      background-color: #009acd; /* Hover effect for the button */
+    }
   </style>
 
 </head>
@@ -145,7 +167,7 @@
             <div class="popup-content">
               <b>Site Name: ${row['Site Name']}</b><br>
               <img src="${row.Photo}" alt="Photo of ${row['Site Name']}"><br>
-              <b>Sound: ${row['Sound Label']}</br>
+              <b>Sound: ${row['Sound Label']}</b><br>
               <button onclick="playAudio('${row.Audio}')">Play Audio</button>
             </div>
           `);
