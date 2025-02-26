@@ -16,6 +16,9 @@
   <!-- Leaflet OpenWeatherMap Plugin -->
   <script src="https://unpkg.com/leaflet-openweathermap"></script>
 
+  <!-- Wavesurfer.js Library -->
+  <script src="https://unpkg.com/wavesurfer.js"></script>
+
   <!-- Custom Styles for Map and Navbar -->
   <style>
     body { margin: 0; padding: 0; }
@@ -72,6 +75,15 @@
     }
     .popup-content button:hover {
       background-color: #009acd; /* Hover effect for the button */
+    }
+
+    /* Wavesurfer.js Waveform Styles */
+    .waveform {
+      width: 100%;
+      height: 100px;
+      margin-bottom: 10px;
+      background: #f0f0f0;
+      border-radius: 4px;
     }
   </style>
 
@@ -145,16 +157,29 @@
         controlLayers.addOverlay(samburuBoundary, "Samburu County Boundary");
       });
 
-    // Function to play audio
-    function playAudio(audioURL) {
-      const audio = new Audio(audioURL);
-      audio.play();
+    // Function to initialize Wavesurfer.js
+    function initWavesurfer(audioURL, containerId) {
+      var wavesurfer = WaveSurfer.create({
+        container: `#${containerId}`,
+        waveColor: '#00bfff',
+        progressColor: '#009acd',
+        height: 80,
+        responsive: true,
+      });
+      wavesurfer.load(audioURL);
+
+      // Add play/pause button functionality
+      document.getElementById(`play-pause-${containerId}`).addEventListener('click', function() {
+        wavesurfer.playPause();
+      });
+
+      return wavesurfer;
     }
 
     // Load CSV data
     $.get('./data.csv', function(csvString) {
       var data = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
-      data.forEach(function(row) {
+      data.forEach(function(row, index) {
         if (row.Latitude && row.Longitude && row['Site Name'] && row.Audio && row.Photo && row.Marker) {
           var customIcon = L.icon({
             iconUrl: row.Marker,
@@ -163,14 +188,25 @@
             popupAnchor: [0, -30]
           });
           var marker = L.marker([row.Latitude, row.Longitude], { icon: customIcon }).addTo(map);
+
+          // Unique ID for each waveform container
+          var waveformId = `waveform-${index}`;
+          var playPauseId = `play-pause-${waveformId}`;
+
           marker.bindPopup(`
             <div class="popup-content">
               <b>Site Name: ${row['Site Name']}</b><br>
               <img src="${row.Photo}" alt="Photo of ${row['Site Name']}"><br>
               <b>Sound: ${row['Sound Label']}</b><br>
-              <button onclick="playAudio('${row.Audio}')">Play Audio</button>
+              <div id="${waveformId}" class="waveform"></div>
+              <button id="${playPauseId}">Play/Pause</button>
             </div>
           `);
+
+          // Initialize Wavesurfer when the popup opens
+          marker.on('popupopen', function() {
+            initWavesurfer(row.Audio, waveformId);
+          });
         }
       });
     });
