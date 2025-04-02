@@ -12,73 +12,22 @@
   <!-- jQuery and PapaParse Libraries -->
   <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
-
-  <!-- Font Awesome for Play/Pause Icons -->
-  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-
-  <!-- Custom Styles for Map and Navbar -->
+  
+  <!-- Wavesurfer for Audio Visualization -->
+  <script src="https://unpkg.com/wavesurfer.js"></script>
+  
+  <!-- Custom Styles -->
   <style>
     body { margin: 0; padding: 0; }
     #map { position: absolute; top: 50px; bottom: 0; right: 0; left: 0; }
-    
-    /* Navbar styles */
-    .navbar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 50px;
-      background-color: #333;
-      color: white;
-      display: flex;
-      align-items: center;
-      padding: 0 20px;
-      z-index: 1000;
-    }
-    .navbar img {
-      height: 40px;
-      margin-right: 10px;
-    }
-    .navbar h1 {
-      font-size: 18px;
-      margin: 0;
-      flex-grow: 1;
-    }
-    .navbar a {
-      color: #00bfff;
-      text-decoration: none;
-      margin-left: 20px;
-    }
-
-    /* Popup Styling */
-    .popup-content {
-      text-align: center;
-    }
-    .popup-content img {
-      display: block;
-      margin: 10px auto;
-      max-width: 100px;
-      height: auto;
-      border-radius: 5px;
-    }
-    .popup-content button {
-      background-color: transparent;
-      border: none;
-      font-size: 20px;
-      cursor: pointer;
-    }
-    .waveform {
-      width: 100%;
-      height: 5px;
-      background-color: lightgray;
-      position: relative;
-      margin-top: 5px;
-    }
-    .waveform .progress {
-      height: 100%;
-      width: 0;
-      background-color: green;
-    }
+    .popup-content img { display: block; margin: 0 auto; max-width: 100px; height: auto; }
+    .audio-controls { text-align: center; margin-top: 5px; }
+    .play-btn { cursor: pointer; font-size: 20px; background: none; border: none; }
+    .wavesurfer-container { width: 100px; height: 30px; margin: auto; }
+    .navbar { position: fixed; top: 0; left: 0; width: 100%; height: 50px; background-color: #333; color: white; display: flex; align-items: center; padding: 0 20px; z-index: 1000; }
+    .navbar img { height: 40px; margin-right: 10px; }
+    .navbar h1 { font-size: 18px; margin: 0; flex-grow: 1; }
+    .navbar a { color: #00bfff; text-decoration: none; margin-left: 20px; }
   </style>
 </head>
 <body>
@@ -108,7 +57,7 @@
       maxZoom: 17,
       attribution: 'Map data: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> contributors'
     });
-    
+
     var satellite = L.tileLayer('https://{s}.sat.owm.io/sql/{z}/{x}/{y}?appid=YOUR_OPENWEATHERMAP_API_KEY', {
       maxZoom: 18,
       attribution: 'Map data &copy; <a href="https://openweathermap.org/">OpenWeatherMap</a>'
@@ -118,22 +67,30 @@
     controlLayers.addBaseLayer(terrain, 'Terrain');
     controlLayers.addBaseLayer(satellite, 'Satellite');
 
-    function playAudio(audioElement, progressElement) {
-      if (audioElement.paused) {
-        audioElement.play();
-      } else {
-        audioElement.pause();
-      }
-      
-      audioElement.ontimeupdate = function () {
-        var percent = (audioElement.currentTime / audioElement.duration) * 100;
-        progressElement.style.width = percent + '%';
+    function playAudio(audioURL, buttonId, waveformId) {
+      const button = document.getElementById(buttonId);
+      const wavesurfer = WaveSurfer.create({
+        container: `#${waveformId}`,
+        waveColor: 'green',
+        progressColor: 'darkgreen',
+        height: 30,
+        responsive: true
+      });
+      wavesurfer.load(audioURL);
+      button.onclick = function () {
+        if (wavesurfer.isPlaying()) {
+          wavesurfer.pause();
+          button.innerHTML = '▶️';
+        } else {
+          wavesurfer.play();
+          button.innerHTML = '⏸️';
+        }
       };
     }
 
     $.get('./data.csv', function(csvString) {
       var data = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
-      data.forEach(function(row) {
+      data.forEach(function(row, index) {
         if (row.Latitude && row.Longitude && row['Site Name'] && row.Audio && row.Photo) {
           var marker = L.circleMarker([row.Latitude, row.Longitude], {
             radius: 6,
@@ -143,46 +100,41 @@
             weight: 2
           }).addTo(map);
 
-          var popupContent = document.createElement("div");
-          popupContent.className = "popup-content";
-          popupContent.innerHTML = `
-            <b>${row['Site Name']}</b><br>
-            <img src="${row.Photo}" alt="Photo of ${row['Site Name']}"><br>
-            <p>Sound Label: ${row['Sound Label']}</p>
-            <button onclick="playAudio(this.nextElementSibling, this.nextElementSibling.nextElementSibling)">
-              <i class="fas fa-play"></i>
-            </button>
-            <audio src="${row.Audio}" style="display:none;"></audio>
-            <div class="waveform"><div class="progress"></div></div>
-          `;
+          var buttonId = `play-btn-${index}`;
+          var waveformId = `waveform-${index}`;
 
-          marker.bindPopup(popupContent);
+          marker.bindPopup(`
+            <div class="popup-content">
+              <b>${row['Site Name']}</b><br>
+              <img src="${row.Photo}" alt="Photo of ${row['Site Name']}"><br>
+              <p>Sound Label: ${row['Sound Label']}</p>
+              <button id="${buttonId}" class="play-btn">▶️</button>
+              <div id="${waveformId}" class="wavesurfer-container"></div>
+            </div>
+            <script>playAudio('${row.Audio}', '${buttonId}', '${waveformId}');<\/script>
+          `);
         }
       });
     });
 
-    function getWeather(lat, lon) {
+    map.on('click', function(e) {
+      var lat = e.latlng.lat;
+      var lon = e.latlng.lng;
       var apiKey = '740f4a49812c1dc35213618727748e3c';
       var url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
       
-      fetch(url)
-        .then(response => response.json())
-        .then(data => {
-          var weatherPopupContent = `
-            <b>Weather at (${lat.toFixed(2)}, ${lon.toFixed(2)})</b><br>
-            <img src="https://openweathermap.org/img/wn/${data.weather[0].icon}.png" alt="Weather Icon"><br>
+      $.getJSON(url, function(data) {
+        var weatherPopup = `
+          <b>Weather at (${lat.toFixed(2)}, ${lon.toFixed(2)})</b><br>
+          <img src="https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png"><br>
             <b>${data.weather[0].description}</b><br>
             Temperature: ${data.main.temp}°C<br>
             Humidity: ${data.main.humidity}%<br>
             Wind Speed: ${data.wind.speed} m/s<br>
             Updated: ${new Date(data.dt * 1000).toLocaleString()}
-          `;
-          L.popup().setLatLng([lat, lon]).setContent(weatherPopupContent).openOn(map);
-        });
-    }
-
-    map.on('click', function(e) {
-      getWeather(e.latlng.lat, e.latlng.lng);
+        `;
+        L.popup().setLatLng(e.latlng).setContent(weatherPopup).openOn(map);
+      });
     });
   </script>
 </body>
