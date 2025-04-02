@@ -1,62 +1,17 @@
-<script>
-  // Initialize the map
-  var map = L.map('map', {
-    center: [1.1147, 37.4608],
-    zoom: 12,
-    scrollWheelZoom: true
-  });
-
-  // Basemaps
-  var osmStandard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 20,
-    attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap contributors</a>'
-  }).addTo(map);
-
-  // Custom marker style
-  var customMarker = {
-    radius: 6,
-    fillColor: "darkgreen",
-    color: "black",
-    weight: 1,
-    opacity: 1,
-    fillOpacity: 1
-  };
-
-  // Load CSV data
-  $.get('./data.csv', function(csvString) {
-    var data = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
-    data.forEach(function(row) {
-      if (row.Latitude && row.Longitude && row['Site Name']) {
-        var marker = L.circleMarker([row.Latitude, row.Longitude], customMarker).addTo(map);
-        marker.bindPopup(`<b>Site Name: ${row['Site Name']}</b>`);
-      }
-    });
-  });
-
-  // Function to fetch weather data from OpenWeatherMap
-  function getWeatherData(lat, lon, callback) {
-    var apiKey = '740f4a49812c1dc35213618727748e3c';
-    var url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
-    
-    fetch(url)
-      .then(response => response.json())
-      .then(data => {
-        var weatherInfo = `
-          <b>Temperature:</b> ${data.main.temp}°C<br>
-          <b>Precipitation:</b> ${data.weather[0].description}
-        `;
-        callback(weatherInfo);
-      })
-      .catch(error => console.error('Error fetching weather data:', error));
-  }
-
-  // Click event for weather data popup
-  map.on('click', function(e) {
-    getWeatherData(e.latlng.lat, e.latlng.lng, function(weatherInfo) {
-      L.popup()
-        .setLatLng(e.latlng)
-        .setContent(weatherInfo)
-        .openOn(map);
-    });
-  });
-</script>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ltome-Katip Project Sensor Locations</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        #map { height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
