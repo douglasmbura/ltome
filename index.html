@@ -102,54 +102,13 @@
       };
     }
 
-    $.get('./data.csv', function(csvString) {
-      var data = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
-      data.forEach(function(row, index) {
-        if (row.Latitude && row.Longitude && row['Site Name'] && row.Audio && row.Photo) {
-          var marker = L.circleMarker([row.Latitude, row.Longitude], {
-            radius: 6,
-            color: "black",
-            fillColor: "darkgreen",
-            fillOpacity: 1,
-            weight: 2
-          }).addTo(map);
-
-          var buttonId = `play-btn-${index}`;
-          var containerId = `waveform-${index}`;
-
-          marker.bindPopup(`
-            <div class="popup-content">
-              <b>${row['Site Name']}</b><br>
-              <img src="${row.Photo}" alt="Photo of ${row['Site Name']}"><br>
-              <p>Sound Label: ${row['Sound Label']}</p>
-              <button id="${buttonId}" class="play-btn"><i class="fas fa-play"></i></button>
-              <div id="${containerId}" class="waveform"></div>
-            </div>
-            <script>createAudioPlayer('${row.Audio}', '${containerId}', '${buttonId}');<\/script>
-          `);
-        }
+    function displayCoordinatesOnClick() {
+      map.on('click', function(e) {
+        alert(`Coordinates: ${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}`);
       });
-    });
+    }
 
-    map.on('click', function(e) {
-      var lat = e.latlng.lat;
-      var lon = e.latlng.lng;
-      var apiKey = '740f4a49812c1dc35213618727748e3c';
-      var url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
-      
-      $.getJSON(url, function(data) {
-        var weatherPopup = `
-          <b>Weather at (${lat.toFixed(2)}, ${lon.toFixed(2)})</b><br>
-          <img src="https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png"><br>
-          <b>${data.weather[0].description}</b><br>
-          Temperature: ${data.main.temp}°C<br>
-          Humidity: ${data.main.humidity}%<br>
-          Wind Speed: ${data.wind.speed} m/s<br>
-          Updated: ${new Date(data.dt * 1000).toLocaleString()}
-        `;
-        L.popup().setLatLng(e.latlng).setContent(weatherPopup).openOn(map);
-      });
-    });
+    displayCoordinatesOnClick();
   </script>
 </body>
 </html>
