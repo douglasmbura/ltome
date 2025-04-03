@@ -18,7 +18,6 @@
     body { margin: 0; padding: 0; }
     #map { position: absolute; top: 50px; bottom: 0; right: 0; left: 0; }
     .popup-content img { display: block; margin: 0 auto; max-width: 100px; height: auto; }
-    .audio-controls { text-align: center; margin-top: 5px; }
     .play-btn { cursor: pointer; font-size: 20px; background: none; border: none; }
     .navbar { position: fixed; top: 0; left: 0; width: 100%; height: 50px; background-color: #333; color: white; display: flex; align-items: center; padding: 0 20px; z-index: 1000; }
     .navbar img { height: 40px; margin-right: 10px; }
@@ -62,6 +61,17 @@
     controlLayers.addBaseLayer(osmStandard, 'OSM Standard');
     controlLayers.addBaseLayer(terrain, 'Terrain');
     controlLayers.addBaseLayer(satellite, 'Satellite');
+
+    // Load and Add GeoJSON Layers
+    function addGeoJSONLayer(url, layerName, style) {
+      $.getJSON(url, function(data) {
+        var geoLayer = L.geoJSON(data, { style: style }).addTo(map);
+        controlLayers.addOverlay(geoLayer, layerName);
+      });
+    }
+
+    addGeoJSONLayer('samburu_county.geojson', 'Samburu County', { color: "blue", weight: 2, fillOpacity: 0.3 });
+    addGeoJSONLayer('namunyak.geojson', 'Namunyak Conservancy', { color: "green", weight: 2, fillOpacity: 0.3 });
 
     function playAudio(audioURL, buttonId) {
       const button = document.getElementById(buttonId);
