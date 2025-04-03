@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html>
 <head>
   <title>Ltome-Katip Project</title>
@@ -53,9 +53,16 @@
       attribution: 'Map data: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> contributors'
     });
 
+    var satellite = L.tileLayer('https://{s}.sat.owm.io/sql/{z}/{x}/{y}?appid=YOUR_OPENWEATHERMAP_API_KEY', {
+      maxZoom: 18,
+      attribution: 'Map data &copy; <a href="https://openweathermap.org/">OpenWeatherMap</a>'
+    });
+
     controlLayers.addBaseLayer(osmStandard, 'OSM Standard');
     controlLayers.addBaseLayer(terrain, 'Terrain');
+    controlLayers.addBaseLayer(satellite, 'Satellite');
 
+    // Load and Add GeoJSON Layers
     function addGeoJSONLayer(url, layerName, style) {
       $.getJSON(url, function(data) {
         var geoLayer = L.geoJSON(data, { style: style }).addTo(map);
@@ -65,6 +72,7 @@
 
     addGeoJSONLayer('namunyak.geojson', 'Namunyak Conservancy', { color: "orange", weight: 2, fillOpacity: 0.3 });
     addGeoJSONLayer('samburu_county.geojson', 'Samburu County', { color: "green", weight: 2, fillOpacity: 0.3 });
+    
 
     function playAudio(audioURL, buttonId) {
       const button = document.getElementById(buttonId);
@@ -72,10 +80,10 @@
       button.onclick = function () {
         if (audio.paused) {
           audio.play();
-          button.innerHTML = '⏸️';
+          button.innerHTML = '⏸️'; // Change button to Pause
         } else {
           audio.pause();
-          button.innerHTML = '▶️';
+          button.innerHTML = '▶️'; // Change button to Play
         }
       };
     }
@@ -101,9 +109,29 @@
               <p>Sound Label: ${row['Sound Label']}</p>
               <button id="${buttonId}" class="play-btn">▶️</button>
             </div>
-            <script>playAudio('${row.Audio}', '${buttonId}');</script>
+            <script>playAudio('${row.Audio}', '${buttonId}');<\/script>
           `);
         }
+      });
+    });
+
+    map.on('click', function(e) {
+      var lat = e.latlng.lat;
+      var lon = e.latlng.lng;
+      var apiKey = '740f4a49812c1dc35213618727748e3c';
+      var url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+      
+      $.getJSON(url, function(data) {
+        var weatherPopup = `
+          <b>Weather at (${lat.toFixed(2)}, ${lon.toFixed(2)})</b><br>
+          <img src="https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png"><br>
+            <b>${data.weather[0].description}</b><br>
+            Temperature: ${data.main.temp}°C<br>
+            Humidity: ${data.main.humidity}%<br>
+            Wind Speed: ${data.wind.speed} m/s<br>
+            Updated: ${new Date(data.dt * 1000).toLocaleString()}
+        `;
+        L.popup().setLatLng(e.latlng).setContent(weatherPopup).openOn(map);
       });
     });
   </script>
