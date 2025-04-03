@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html>
 <head>
   <title>Ltome-Katip Project</title>
@@ -12,13 +12,20 @@
   <!-- jQuery and PapaParse Libraries -->
   <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
-  
+
+  <!-- Wavesurfer for Sound Wave Visualization -->
+  <script src="https://unpkg.com/wavesurfer.js"></script>
+
+  <!-- Font Awesome for Play/Pause Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
+
   <!-- Custom Styles -->
   <style>
     body { margin: 0; padding: 0; }
     #map { position: absolute; top: 50px; bottom: 0; right: 0; left: 0; }
     .popup-content img { display: block; margin: 0 auto; max-width: 100px; height: auto; }
     .play-btn { cursor: pointer; font-size: 20px; background: none; border: none; }
+    .waveform { width: 100%; height: 50px; margin-top: 5px; }
     .navbar { position: fixed; top: 0; left: 0; width: 100%; height: 50px; background-color: #333; color: white; display: flex; align-items: center; padding: 0 20px; z-index: 1000; }
     .navbar img { height: 40px; margin-right: 10px; }
     .navbar h1 { font-size: 18px; margin: 0; flex-grow: 1; }
@@ -72,18 +79,25 @@
 
     addGeoJSONLayer('namunyak.geojson', 'Namunyak Conservancy', { color: "orange", weight: 2, fillOpacity: 0.3 });
     addGeoJSONLayer('samburu_county.geojson', 'Samburu County', { color: "green", weight: 2, fillOpacity: 0.3 });
-    
 
-    function playAudio(audioURL, buttonId) {
+    function createAudioPlayer(audioURL, containerId, buttonId) {
+      var wavesurfer = WaveSurfer.create({
+        container: `#${containerId}`,
+        waveColor: 'gray',
+        progressColor: 'darkgreen',
+        height: 40
+      });
+
+      wavesurfer.load(audioURL);
+
       const button = document.getElementById(buttonId);
-      const audio = new Audio(audioURL);
       button.onclick = function () {
-        if (audio.paused) {
-          audio.play();
-          button.innerHTML = '⏸️'; // Change button to Pause
+        if (wavesurfer.isPlaying()) {
+          wavesurfer.pause();
+          button.innerHTML = '<i class="fas fa-play"></i>';
         } else {
-          audio.pause();
-          button.innerHTML = '▶️'; // Change button to Play
+          wavesurfer.play();
+          button.innerHTML = '<i class="fas fa-pause"></i>';
         }
       };
     }
@@ -101,15 +115,17 @@
           }).addTo(map);
 
           var buttonId = `play-btn-${index}`;
+          var containerId = `waveform-${index}`;
 
           marker.bindPopup(`
             <div class="popup-content">
               <b>${row['Site Name']}</b><br>
               <img src="${row.Photo}" alt="Photo of ${row['Site Name']}"><br>
               <p>Sound Label: ${row['Sound Label']}</p>
-              <button id="${buttonId}" class="play-btn">▶️</button>
+              <button id="${buttonId}" class="play-btn"><i class="fas fa-play"></i></button>
+              <div id="${containerId}" class="waveform"></div>
             </div>
-            <script>playAudio('${row.Audio}', '${buttonId}');<\/script>
+            <script>createAudioPlayer('${row.Audio}', '${containerId}', '${buttonId}');<\/script>
           `);
         }
       });
@@ -125,11 +141,11 @@
         var weatherPopup = `
           <b>Weather at (${lat.toFixed(2)}, ${lon.toFixed(2)})</b><br>
           <img src="https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png"><br>
-            <b>${data.weather[0].description}</b><br>
-            Temperature: ${data.main.temp}°C<br>
-            Humidity: ${data.main.humidity}%<br>
-            Wind Speed: ${data.wind.speed} m/s<br>
-            Updated: ${new Date(data.dt * 1000).toLocaleString()}
+          <b>${data.weather[0].description}</b><br>
+          Temperature: ${data.main.temp}°C<br>
+          Humidity: ${data.main.humidity}%<br>
+          Wind Speed: ${data.wind.speed} m/s<br>
+          Updated: ${new Date(data.dt * 1000).toLocaleString()}
         `;
         L.popup().setLatLng(e.latlng).setContent(weatherPopup).openOn(map);
       });
