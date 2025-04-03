@@ -39,24 +39,32 @@
 
   <script>
     var map = L.map('map', {
-      center: [1.1147199,37.4576416],
+      center: [1.1147199, 37.4576416],
       zoom: 9,
       scrollWheelZoom: true
     });
 
     var controlLayers = L.control.layers(null, null, { position: "topright", collapsed: false }).addTo(map);
 
+    // OpenStreetMap Standard Layer
     var osmStandard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap contributors</a>'
     }).addTo(map);
 
+    // Open Satellite Layer (Esri World Imagery)
+    var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: '&copy; <a href="https://www.esri.com">Esri</a> contributors'
+    });
+
+    // Terrain Layer
     var terrain = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
       maxZoom: 17,
       attribution: 'Map data: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> contributors'
     });
 
     controlLayers.addBaseLayer(osmStandard, 'OSM Standard');
+    controlLayers.addBaseLayer(satellite, 'Satellite');
     controlLayers.addBaseLayer(terrain, 'Terrain');
 
     function addGeoJSONLayer(url, layerName, style) {
@@ -81,7 +89,7 @@
             weight: 2
           }).addTo(map);
 
-          var popupContent = `
+          var popupContent = ` 
             <div class="popup-content">
               <b>${row['Site Name']}</b><br>
               <img src="${row.Photo}" alt="Photo of ${row['Site Name']}"><br>
@@ -117,6 +125,45 @@
           });
         }
       });
+    });
+
+    // OpenWeather API Function - Fetch weather on map click
+    function fetchWeather(lat, lon) {
+      const apiKey = '740f4a49812c1dc35213618727748e3c';  // Replace with your OpenWeather API key
+      const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+
+      $.get(weatherUrl, function(data) {
+        const temp = data.main.temp;
+        const description = data.weather[0].description;
+        const icon = `http://openweathermap.org/img/wn/${data.weather[0].icon}.png`;
+        const humidity = data.main.humidity;
+        const windSpeed = data.wind.speed;
+        const datetime = new Date(data.dt * 1000).toLocaleString();
+
+        var weatherPopup = `
+          <div>
+            <h4>Weather Condition</h4>
+            <p><img src="${icon}" alt="weather icon"> ${description}</p>
+            <p>Temperature: ${temp}°C</p>
+            <p>Humidity: ${humidity}%</p>
+            <p>Wind Speed: ${windSpeed} m/s</p>
+            <p>Last Updated: ${datetime}</p>
+          </div>
+        `;
+        
+        // Display weather information in a popup at the clicked location
+        L.popup()
+          .setLatLng([lat, lon])
+          .setContent(weatherPopup)
+          .openOn(map);
+      });
+    }
+
+    // Capture map click event and show weather at clicked location
+    map.on('click', function(e) {
+      var lat = e.latlng.lat;
+      var lon = e.latlng.lng;
+      fetchWeather(lat, lon);
     });
   </script>
 </body>
