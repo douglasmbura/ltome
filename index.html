@@ -30,7 +30,7 @@
 </head>
 <body>
   <div class="navbar">
-    <img src="assets/logo.png" alt="Project Logo">
+    <img src="project-logo.png" alt="Project Logo">
     <h1>Ltome-Katip Project</h1>
     <a href="about.html" target="_blank">About this project</a>
   </div>
@@ -158,6 +158,34 @@
           .openOn(map);
       });
     }
+
+
+    // Add uploaded CSV file as selectable layer
+    var additionalLayerGroup = L.layerGroup();
+
+    $.get('./outputfull.csv', function(csvString) {
+      var parsed = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
+
+      parsed.forEach(function(row) {
+        if (row.Latitude && row.Longitude) {
+          let popupContent = '<div>';
+          for (let key in row) {
+            popupContent += `<b>${key}:</b> ${row[key]}<br>`;
+          }
+          popupContent += '</div>';
+
+          L.circleMarker([row.Latitude, row.Longitude], {
+            radius: 6,
+            color: "blue",
+            fillColor: "lightblue",
+            fillOpacity: 0.9,
+            weight: 1
+          }).bindPopup(popupContent).addTo(additionalLayerGroup);
+        }
+      });
+
+      controlLayers.addOverlay(additionalLayerGroup, "Additional CSV Layer");
+    });
 
     // Capture map click event and show weather at clicked location
     map.on('click', function(e) {
