@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+<!-- Full HTML with requested updates -->
+<!DOCTYPE html> 
 <html>
 <head>
   <title>Ltome-Katip Project</title>
@@ -18,7 +19,7 @@
   <!-- Custom Styles -->
   <style>
     body { margin: 0; padding: 0; }
-    #map { position: absolute; top: 50px; bottom: 0; right: 0; left: 0; }
+    #map { position: absolute; top: 80px; bottom: 0; right: 0; left: 0; }
     .popup-content img { display: block; margin: 0 auto; max-width: 100px; height: auto; }
     .play-btn { cursor: pointer; font-size: 20px; background: none; border: none; }
     .navbar { position: fixed; top: 0; left: 0; width: 100%; height: 50px; background-color: #333; color: white; display: flex; align-items: center; padding: 0 20px; z-index: 1000; }
@@ -26,6 +27,7 @@
     .navbar h1 { font-size: 18px; margin: 0; flex-grow: 1; }
     .navbar a { color: #00bfff; text-decoration: none; margin-left: 20px; }
     .waveform { width: 100%; height: 50px; background: #eee; margin-top: 10px; }
+    #weather-controls { position: fixed; top: 50px; left: 10px; background: white; padding: 5px; z-index: 1000; font-size: 14px; }
   </style>
 </head>
 <body>
@@ -33,6 +35,17 @@
     <img src="assets/logo.png" alt="Project Logo">
     <h1>Ltome-Katip Project</h1>
     <a href="about.html" target="_blank">About this project</a>
+  </div>
+
+  <!-- Weather Date Selector -->
+  <div id="weather-controls">
+    <label for="weather-date">Weather Date:</label>
+    <input type="date" id="weather-date" max="<?= (new Date()).toISOString().split('T')[0] ?>">
+    <select id="weather-type">
+      <option value="temp">Temperature</option>
+      <option value="precip">Precipitation</option>
+    </select>
+    <button onclick="updateWeatherLayer()">Update Weather Layer</button>
   </div>
 
   <div id="map"></div>
@@ -46,18 +59,16 @@
 
     var controlLayers = L.control.layers(null, null, { position: "topright", collapsed: false }).addTo(map);
 
-    // OpenStreetMap Standard Layer
+    // Base Layers
     var osmStandard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap contributors</a>'
     }).addTo(map);
 
-    // Open Satellite Layer (Esri World Imagery)
     var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       attribution: '&copy; <a href="https://www.esri.com">Esri</a> contributors'
     });
 
-    // Terrain Layer
     var terrain = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
       maxZoom: 17,
       attribution: 'Map data: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> contributors'
@@ -77,6 +88,8 @@
     addGeoJSONLayer('namunyak.geojson', 'Namunyak Conservancy', { color: "orange", weight: 2, fillOpacity: 0.3 });
     addGeoJSONLayer('samburu_county.geojson', 'Samburu County', { color: "green", weight: 2, fillOpacity: 0.3 });
 
+    // DATA.CSV — make layer selectable
+    var dataCsvLayer = L.layerGroup();
     $.get('./data.csv', function(csvString) {
       var data = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
       data.forEach(function(row, index) {
@@ -87,9 +100,7 @@
             fillColor: "darkgreen",
             fillOpacity: 1,
             weight: 2
-          }).addTo(map);
-
-          var popupContent = ` 
+          }).bindPopup(` 
             <div class="popup-content">
               <b>${row['Site Name']}</b><br>
               <img src="${row.Photo}" alt="Photo of ${row['Site Name']}"><br>
@@ -97,9 +108,7 @@
               <button id="play-btn-${index}" class="play-btn"><i class="fas fa-play"></i></button>
               <div id="waveform-${index}" class="waveform"></div>
             </div>
-          `;
-
-          marker.bindPopup(popupContent);
+          `).addTo(dataCsvLayer);
 
           marker.on('popupopen', function() {
             var wavesurfer = WaveSurfer.create({
@@ -125,11 +134,66 @@
           });
         }
       });
+      controlLayers.addOverlay(dataCsvLayer, "Audio Data (data.csv)");
     });
 
-    // OpenWeather API Function - Fetch weather on map click
+    // Outputfull.csv
+    var additionalLayerGroup = L.layerGroup();
+    $.get('./outputfull.csv', function(csvString) {
+      var parsed = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
+      parsed.forEach(function(row) {
+        if (row.Latitude && row.Longitude) {
+          let popupContent = '<div>';
+          for (let key in row) {
+            popupContent += `<b>${key}:</b> ${row[key]}<br>`;
+          }
+          popupContent += '</div>';
+          L.circleMarker([row.Latitude, row.Longitude], {
+            radius: 6,
+            color: "blue",
+            fillColor: "lightblue",
+            fillOpacity: 0.9,
+            weight: 1
+          }).bindPopup(popupContent).addTo(additionalLayerGroup);
+        }
+      });
+      controlLayers.addOverlay(additionalLayerGroup, "Historical Weather Grid");
+    });
+
+    // Camera Trap Images
+    var cameraTrapLayer = L.layerGroup();
+    $.get('./cameratraps.csv', function(csvString) {
+      var parsed = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
+      parsed.forEach(function(row) {
+        if (row.Latitude && row.Longitude && row.Image) {
+          var iconCamera = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/1043/1043926.png',
+            iconSize: [30, 30],
+            iconAnchor: [15, 30],
+            popupAnchor: [0, -30]
+          });
+          var popupContent = `
+            <div style="text-align:center;">
+              <b>Camera Trap Image</b><br>
+              <img src="${row.Image}" alt="Camera Image" style="max-width:200px; height:auto;"><br>
+              <small>${row['Site Name'] || ''}</small>
+            </div>
+          `;
+          L.marker([row.Latitude, row.Longitude], { icon: iconCamera }).bindPopup(popupContent).addTo(cameraTrapLayer);
+        }
+      });
+      controlLayers.addOverlay(cameraTrapLayer, "Camera Trap Images");
+    });
+
+    // On map click, fetch current weather
+    map.on('click', function(e) {
+      var lat = e.latlng.lat;
+      var lon = e.latlng.lng;
+      fetchWeather(lat, lon);
+    });
+
     function fetchWeather(lat, lon) {
-      const apiKey = '740f4a49812c1dc35213618727748e3c';  // Replace with your OpenWeather API key
+      const apiKey = '740f4a49812c1dc35213618727748e3c';  // Replace with your key
       const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
 
       $.get(weatherUrl, function(data) {
@@ -150,81 +214,35 @@
             <p>Last Updated: ${datetime}</p>
           </div>
         `;
-        
-        // Display weather information in a popup at the clicked location
-        L.popup()
-          .setLatLng([lat, lon])
-          .setContent(weatherPopup)
-          .openOn(map);
+        L.popup().setLatLng([lat, lon]).setContent(weatherPopup).openOn(map);
       });
     }
 
+    // Gradient Weather Layer
+    var weatherLayer;
+    function updateWeatherLayer() {
+      var date = document.getElementById("weather-date").value;
+      var type = document.getElementById("weather-type").value;
+      if (!date) {
+        alert("Please select a date");
+        return;
+      }
 
-    // Add uploaded CSV file as selectable layer
-    var additionalLayerGroup = L.layerGroup();
+      const apiKey = '740f4a49812c1dc35213618727748e3c';  // Replace with your key
+      const dt = Math.floor(new Date(date).getTime() / 1000);
+      const baseUrl = `https://tile.openweathermap.org/map/${type}_new/{z}/{x}/{y}.png?appid=${apiKey}`;
 
-    $.get('./outputfull.csv', function(csvString) {
-      var parsed = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
+      if (weatherLayer) {
+        map.removeLayer(weatherLayer);
+        controlLayers.removeLayer(weatherLayer);
+      }
 
-      parsed.forEach(function(row) {
-        if (row.Latitude && row.Longitude) {
-          let popupContent = '<div>';
-          for (let key in row) {
-            popupContent += `<b>${key}:</b> ${row[key]}<br>`;
-          }
-          popupContent += '</div>';
+      weatherLayer = L.tileLayer(baseUrl, {
+        opacity: 0.6
+      }).addTo(map);
 
-          L.circleMarker([row.Latitude, row.Longitude], {
-            radius: 6,
-            color: "blue",
-            fillColor: "lightblue",
-            fillOpacity: 0.9,
-            weight: 1
-          }).bindPopup(popupContent).addTo(additionalLayerGroup);
-        }
-      });
-
-      controlLayers.addOverlay(additionalLayerGroup, "Historical Weather Grid");
-    });
-
-    // Add Camera Trap CSV layer with image popups
-    var cameraTrapLayer = L.layerGroup();
-
-    $.get('./cameratraps.csv', function(csvString) {
-      var parsed = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
-
-      parsed.forEach(function(row) {
-        if (row.Latitude && row.Longitude && row.Image) {
-          var iconCamera = L.icon({
-            iconUrl: 'https://cdn-icons-png.flaticon.com/512/1043/1043926.png',
-            iconSize: [30, 30],
-            iconAnchor: [15, 30],
-            popupAnchor: [0, -30]
-          });
-
-          var popupContent = `
-            <div style="text-align:center;">
-              <b>Camera Trap Image</b><br>
-              <img src="${row.Image}" alt="Camera Image" style="max-width:200px; height:auto;"><br>
-              <small>${row['Site Name'] || ''}</small>
-            </div>
-          `;
-
-          L.marker([row.Latitude, row.Longitude], { icon: iconCamera })
-            .bindPopup(popupContent)
-            .addTo(cameraTrapLayer);
-        }
-      });
-
-      controlLayers.addOverlay(cameraTrapLayer, "Camera Trap Images");
-    });
-
-    // Capture map click event and show weather at clicked location
-    map.on('click', function(e) {
-      var lat = e.latlng.lat;
-      var lon = e.latlng.lng;
-      fetchWeather(lat, lon);
-    });
+      controlLayers.addOverlay(weatherLayer, `Weather (${type}) ${date}`);
+    }
   </script>
 </body>
 </html>
