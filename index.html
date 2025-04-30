@@ -70,6 +70,17 @@
     <button onclick="updateWeatherLayer()">Update Weather Layer</button>
   </div>
 
+  <!-- NDVI and EVI Controls -->
+<div id="veg-controls" style="position: fixed; top: 150px; left: 10px; background: white; padding: 5px; z-index: 1000; font-size: 14px;">
+  <label for="veg-date">NDVI/EVI Date:</label>
+  <input type="date" id="veg-date" max="<?= (new Date()).toISOString().split('T')[0] ?>">
+  <select id="veg-type">
+    <option value="MODIS_Terra_NDVI_16Day">NDVI (16-day)</option>
+    <option value="MODIS_Terra_EVI_16Day">EVI (16-day)</option>
+  </select>
+  <button onclick="updateVegLayer()">Update Veg Layer</button>
+</div>
+
   <div id="map"></div>
   <div id="legend" class="legend"></div>
 
@@ -191,6 +202,34 @@
       controlLayers.addOverlay(dataCsvLayer, "Audio Data (data.csv)");
     });
 
+var vegLayer;
+function updateVegLayer() {
+  var date = document.getElementById("veg-date").value;
+  var type = document.getElementById("veg-type").value;
+  if (!date) {
+    alert("Please select a vegetation date");
+    return;
+  }
+
+  const year = new Date(date).getUTCFullYear();
+  const month = String(new Date(date).getUTCMonth() + 1).padStart(2, '0');
+  const day = String(new Date(date).getUTCDate()).padStart(2, '0');
+  const formattedDate = `${year}-${month}-${day}`;
+
+  const baseUrl = `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${type}/default/${formattedDate}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png`;
+
+  if (vegLayer) {
+    map.removeLayer(vegLayer);
+    controlLayers.removeLayer(vegLayer);
+  }
+
+  vegLayer = L.tileLayer(baseUrl, {
+    attribution: 'NASA GIBS / MODIS',
+    opacity: 0.7
+  }).addTo(map);
+
+  controlLayers.addOverlay(vegLayer, `${type} on ${formattedDate}`);
+}
 
     
 // Camera Trap Images
@@ -240,5 +279,17 @@
       });
     });
   </script>
+  <!-- NDVI/EVI Legend -->
+<div id="veg-legend" style="position: fixed; bottom: 10px; left: 10px; background: rgba(255,255,255,0.8); padding: 10px; font-size: 12px; z-index: 1000;">
+  <b>Vegetation Index (NDVI / EVI)</b><br>
+  <div style="display: flex; align-items: center;">
+    <div style="width: 120px; height: 10px; background: linear-gradient(to right, #654321, #ffcc00, #00ff00); margin-right: 10px;"></div>
+    <div style="display: flex; justify-content: space-between; width: 100px;">
+      <span>-1</span><span>0</span><span>+1</span>
+    </div>
+  </div>
+  <small>Brown = Low Vegetation<br>Green = Dense Vegetation</small>
+</div>
+
 </body>
 </html>
