@@ -69,13 +69,6 @@
     </select>
     <button onclick="updateWeatherLayer()">Update Weather Layer</button>
   </div>
-<select id="veg-type">
-  <option value="MODIS_Terra_EVI_16Day">MODIS Terra EVI (16-day)</option>
-</select>
-
-<input type="date" id="veg-date" />
-<button onclick="updateVegLayer()">Load Vegetation Layer</button>
-
 
   <div id="map"></div>
   <div id="legend" class="legend"></div>
@@ -239,8 +232,6 @@ function updateVegLayer() {
 
   controlLayers.addOverlay(vegLayer, `${layerName} on ${formattedDate}`);
 }
-
-
     
 // Camera Trap Images
     var cameraTrapLayer = L.layerGroup();
@@ -290,5 +281,11 @@ function updateVegLayer() {
     });
   </script>
 
+  <select id="veg-type">
+  <option value="MODIS_Terra_EVI_16Day">MODIS Terra EVI (16-day)</option>
+</select>
+
+<input type="date" id="veg-date" />
+<button onclick="updateVegLayer()">Load Vegetation Layer</button>
 </body>
 </html>
