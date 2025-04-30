@@ -188,7 +188,30 @@
       });
       controlLayers.addOverlay(dataCsvLayer, "Audio Data (data.csv)");
     });
-
+/ Camera Trap Images
+    var cameraTrapLayer = L.layerGroup();
+    $.get('./cameratraps.csv', function(csvString) {
+      var parsed = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
+      parsed.forEach(function(row) {
+        if (row.Latitude && row.Longitude && row.Image) {
+          var iconCamera = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/1043/1043926.png',
+            iconSize: [30, 30],
+            iconAnchor: [15, 30],
+            popupAnchor: [0, -30]
+          });
+          var popupContent = `
+            <div style="text-align:center;">
+              <b>Camera Trap Image</b><br>
+              <img src="${row.Image}" alt="Camera Image" style="max-width:200px; height:auto;"><br>
+              <small>${row['Site Name'] || ''}</small>
+            </div>
+          `;
+          L.marker([row.Latitude, row.Longitude], { icon: iconCamera }).bindPopup(popupContent).addTo(cameraTrapLayer);
+        }
+      });
+      controlLayers.addOverlay(cameraTrapLayer, "Camera Trap Images");
+    });
 
     // Click weather popup
     map.on('click', function (e) {
