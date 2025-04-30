@@ -1,33 +1,53 @@
-<!-- Full HTML with requested updates -->
-<!DOCTYPE html> 
+<!-- Updated HTML for Global Weather Layers and Legends -->
+<!DOCTYPE html>
 <html>
 <head>
   <title>Ltome-Katip Project</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta charset="utf-8">
 
-  <!-- Leaflet Library -->
+  <!-- Leaflet CSS/JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 
-  <!-- jQuery, PapaParse, Font Awesome, and Wavesurfer Libraries -->
+  <!-- jQuery, PapaParse, Font Awesome, Wavesurfer -->
   <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/wavesurfer.js/6.6.3/wavesurfer.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
-  <!-- Custom Styles -->
   <style>
     body { margin: 0; padding: 0; }
     #map { position: absolute; top: 80px; bottom: 0; right: 0; left: 0; }
-    .popup-content img { display: block; margin: 0 auto; max-width: 100px; height: auto; }
-    .play-btn { cursor: pointer; font-size: 20px; background: none; border: none; }
-    .navbar { position: fixed; top: 0; left: 0; width: 100%; height: 50px; background-color: #333; color: white; display: flex; align-items: center; padding: 0 20px; z-index: 1000; }
+    .popup-content img { max-width: 100px; display: block; margin: 0 auto; }
+    .navbar {
+      position: fixed; top: 0; left: 0; width: 100%; height: 50px;
+      background-color: #333; color: white; display: flex;
+      align-items: center; padding: 0 20px; z-index: 1000;
+    }
     .navbar img { height: 40px; margin-right: 10px; }
     .navbar h1 { font-size: 18px; margin: 0; flex-grow: 1; }
     .navbar a { color: #00bfff; text-decoration: none; margin-left: 20px; }
+
+    #weather-controls {
+      position: fixed; top: 50px; left: 10px; z-index: 1000;
+      background: white; padding: 8px; font-size: 13px;
+    }
+
+    .legend {
+      line-height: 18px;
+      color: #555;
+      background: white;
+      padding: 6px;
+      font-size: 13px;
+      position: fixed;
+      bottom: 20px;
+      left: 10px;
+      z-index: 999;
+      border: 1px solid #ccc;
+    }
+
     .waveform { width: 100%; height: 50px; background: #eee; margin-top: 10px; }
-    #weather-controls { position: fixed; top: 50px; left: 10px; background: white; padding: 5px; z-index: 1000; font-size: 14px; }
   </style>
 </head>
 <body>
@@ -37,212 +57,101 @@
     <a href="about.html" target="_blank">About this project</a>
   </div>
 
-  <!-- Weather Date Selector -->
   <div id="weather-controls">
     <label for="weather-date">Weather Date:</label>
-    <input type="date" id="weather-date" max="<?= (new Date()).toISOString().split('T')[0] ?>">
+    <input type="datetime-local" id="weather-date">
     <select id="weather-type">
-      <option value="temp">Temperature</option>
-      <option value="precip">Precipitation</option>
+      <option value="temp_new">Temperature</option>
+      <option value="precipitation_new">Precipitation</option>
+      <option value="pressure_new">Pressure</option>
+      <option value="wind_new">Wind Speed</option>
+      <option value="clouds_new">Cloud Cover</option>
     </select>
     <button onclick="updateWeatherLayer()">Update Weather Layer</button>
   </div>
 
   <div id="map"></div>
+  <div id="legend" class="legend"></div>
 
   <script>
-    var map = L.map('map', {
-      center: [1.1147199, 37.4576416],
-      zoom: 9,
+    const apiKey = '740f4a49812c1dc35213618727748e3c'; // Replace if needed
+
+    const weatherLegends = {
+      temp_new: "Temperature: Blue (cold) → Red (hot)",
+      precipitation_new: "Precipitation: White (dry) → Blue (wet)",
+      pressure_new: "Pressure: Light → Dark Purple (low → high)",
+      wind_new: "Wind Speed: Grey → Green",
+      clouds_new: "Cloud Cover: Light Grey → Dark Grey"
+    };
+
+    let map = L.map('map', {
+      center: [1.1147, 37.4576],
+      zoom: 6,
       scrollWheelZoom: true
     });
 
-    var controlLayers = L.control.layers(null, null, { position: "topright", collapsed: false }).addTo(map);
+    let controlLayers = L.control.layers(null, null, { position: "topright", collapsed: false }).addTo(map);
 
-    // Base Layers
-    var osmStandard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap contributors</a>'
-    }).addTo(map);
+    let baseMaps = {
+      "OSM Standard": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map),
+      "Satellite": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '© Esri contributors'
+      }),
+      "Terrain": L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenTopoMap contributors'
+      })
+    };
 
-    var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: '&copy; <a href="https://www.esri.com">Esri</a> contributors'
-    });
-
-    var terrain = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-      maxZoom: 17,
-      attribution: 'Map data: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> contributors'
-    });
-
-    controlLayers.addBaseLayer(osmStandard, 'OSM Standard');
-    controlLayers.addBaseLayer(satellite, 'Satellite');
-    controlLayers.addBaseLayer(terrain, 'Terrain');
-
-    function addGeoJSONLayer(url, layerName, style) {
-      $.getJSON(url, function(data) {
-        var geoLayer = L.geoJSON(data, { style: style }).addTo(map);
-        controlLayers.addOverlay(geoLayer, layerName);
-      });
+    for (let name in baseMaps) {
+      controlLayers.addBaseLayer(baseMaps[name], name);
     }
 
-    addGeoJSONLayer('namunyak.geojson', 'Namunyak Conservancy', { color: "orange", weight: 2, fillOpacity: 0.3 });
-    addGeoJSONLayer('samburu_county.geojson', 'Samburu County', { color: "green", weight: 2, fillOpacity: 0.3 });
+    let weatherLayer;
 
-    // DATA.CSV — make layer selectable
-    var dataCsvLayer = L.layerGroup();
-    $.get('./data.csv', function(csvString) {
-      var data = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
-      data.forEach(function(row, index) {
-        if (row.Latitude && row.Longitude && row['Site Name'] && row.Audio && row.Photo) {
-          var marker = L.circleMarker([row.Latitude, row.Longitude], {
-            radius: 6,
-            color: "black",
-            fillColor: "darkgreen",
-            fillOpacity: 1,
-            weight: 2
-          }).bindPopup(` 
-            <div class="popup-content">
-              <b>${row['Site Name']}</b><br>
-              <img src="${row.Photo}" alt="Photo of ${row['Site Name']}"><br>
-              <p>Sound Label: ${row['Sound Label']}</p>
-              <button id="play-btn-${index}" class="play-btn"><i class="fas fa-play"></i></button>
-              <div id="waveform-${index}" class="waveform"></div>
-            </div>
-          `).addTo(dataCsvLayer);
-
-          marker.on('popupopen', function() {
-            var wavesurfer = WaveSurfer.create({
-              container: `#waveform-${index}`,
-              waveColor: 'black',
-              progressColor: 'green',
-              barWidth: 2,
-              height: 50
-            });
-
-            wavesurfer.load(row.Audio);
-
-            var playButton = document.getElementById(`play-btn-${index}`);
-            playButton.onclick = function () {
-              if (wavesurfer.isPlaying()) {
-                wavesurfer.pause();
-                playButton.innerHTML = '<i class="fas fa-play"></i>';
-              } else {
-                wavesurfer.play();
-                playButton.innerHTML = '<i class="fas fa-pause"></i>';
-              }
-            };
-          });
-        }
-      });
-      controlLayers.addOverlay(dataCsvLayer, "Audio Data (data.csv)");
-    });
-
-    // Outputfull.csv
-    var additionalLayerGroup = L.layerGroup();
-    $.get('./outputfull.csv', function(csvString) {
-      var parsed = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
-      parsed.forEach(function(row) {
-        if (row.Latitude && row.Longitude) {
-          let popupContent = '<div>';
-          for (let key in row) {
-            popupContent += `<b>${key}:</b> ${row[key]}<br>`;
-          }
-          popupContent += '</div>';
-          L.circleMarker([row.Latitude, row.Longitude], {
-            radius: 6,
-            color: "blue",
-            fillColor: "lightblue",
-            fillOpacity: 0.9,
-            weight: 1
-          }).bindPopup(popupContent).addTo(additionalLayerGroup);
-        }
-      });
-      controlLayers.addOverlay(additionalLayerGroup, "Historical Weather Grid");
-    });
-
-    // Camera Trap Images
-    var cameraTrapLayer = L.layerGroup();
-    $.get('./cameratraps.csv', function(csvString) {
-      var parsed = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
-      parsed.forEach(function(row) {
-        if (row.Latitude && row.Longitude && row.Image) {
-          var iconCamera = L.icon({
-            iconUrl: 'https://cdn-icons-png.flaticon.com/512/1043/1043926.png',
-            iconSize: [30, 30],
-            iconAnchor: [15, 30],
-            popupAnchor: [0, -30]
-          });
-          var popupContent = `
-            <div style="text-align:center;">
-              <b>Camera Trap Image</b><br>
-              <img src="${row.Image}" alt="Camera Image" style="max-width:200px; height:auto;"><br>
-              <small>${row['Site Name'] || ''}</small>
-            </div>
-          `;
-          L.marker([row.Latitude, row.Longitude], { icon: iconCamera }).bindPopup(popupContent).addTo(cameraTrapLayer);
-        }
-      });
-      controlLayers.addOverlay(cameraTrapLayer, "Camera Trap Images");
-    });
-
-    // On map click, fetch current weather
-    map.on('click', function(e) {
-      var lat = e.latlng.lat;
-      var lon = e.latlng.lng;
-      fetchWeather(lat, lon);
-    });
-
-    function fetchWeather(lat, lon) {
-      const apiKey = '740f4a49812c1dc35213618727748e3c';  // Replace with your key
-      const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
-
-      $.get(weatherUrl, function(data) {
-        const temp = data.main.temp;
-        const description = data.weather[0].description;
-        const icon = `http://openweathermap.org/img/wn/${data.weather[0].icon}.png`;
-        const humidity = data.main.humidity;
-        const windSpeed = data.wind.speed;
-        const datetime = new Date(data.dt * 1000).toLocaleString();
-
-        var weatherPopup = `
-          <div>
-            <h4>Weather Condition</h4>
-            <p><img src="${icon}" alt="weather icon"> ${description}</p>
-            <p>Temperature: ${temp}°C</p>
-            <p>Humidity: ${humidity}%</p>
-            <p>Wind Speed: ${windSpeed} m/s</p>
-            <p>Last Updated: ${datetime}</p>
-          </div>
-        `;
-        L.popup().setLatLng([lat, lon]).setContent(weatherPopup).openOn(map);
-      });
-    }
-
-    // Gradient Weather Layer
-    var weatherLayer;
     function updateWeatherLayer() {
-      var date = document.getElementById("weather-date").value;
-      var type = document.getElementById("weather-type").value;
+      let date = document.getElementById("weather-date").value;
+      let type = document.getElementById("weather-type").value;
+
       if (!date) {
-        alert("Please select a date");
+        alert("Please select a date/time.");
         return;
       }
-
-      const apiKey = '740f4a49812c1dc35213618727748e3c';  // Replace with your key
-      const dt = Math.floor(new Date(date).getTime() / 1000);
-      const baseUrl = `https://tile.openweathermap.org/map/${type}_new/{z}/{x}/{y}.png?appid=${apiKey}`;
 
       if (weatherLayer) {
         map.removeLayer(weatherLayer);
         controlLayers.removeLayer(weatherLayer);
       }
 
-      weatherLayer = L.tileLayer(baseUrl, {
-        opacity: 0.6
-      }).addTo(map);
+      const tileUrl = `https://tile.openweathermap.org/map/${type}/{z}/{x}/{y}.png?appid=${apiKey}`;
+      weatherLayer = L.tileLayer(tileUrl, { opacity: 0.6 }).addTo(map);
+      controlLayers.addOverlay(weatherLayer, `Weather (${type})`);
 
-      controlLayers.addOverlay(weatherLayer, `Weather (${type}) ${date}`);
+      document.getElementById("legend").innerText = weatherLegends[type] || "No legend available.";
     }
+
+    // Click weather popup
+    map.on('click', function (e) {
+      const lat = e.latlng.lat;
+      const lon = e.latlng.lng;
+
+      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+
+      $.get(url, function (data) {
+        const popupContent = `
+          <b>Weather</b><br>
+          <img src="http://openweathermap.org/img/wn/${data.weather[0].icon}.png" alt="icon"><br>
+          ${data.weather[0].description}<br>
+          Temp: ${data.main.temp}°C<br>
+          Pressure: ${data.main.pressure} hPa<br>
+          Wind: ${data.wind.speed} m/s<br>
+          Clouds: ${data.clouds.all}%<br>
+          Time: ${new Date(data.dt * 1000).toLocaleString()}
+        `;
+        L.popup().setLatLng([lat, lon]).setContent(popupContent).openOn(map);
+      });
+    });
   </script>
 </body>
 </html>
