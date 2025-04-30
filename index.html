@@ -140,13 +140,59 @@
 
     addGeoJSONLayer('namunyak.geojson', 'Namunyak Conservancy', { color: "orange", weight: 2, fillOpacity: 0.3 });
     addGeoJSONLayer('samburu_county.geojson', 'Samburu County', { color: "green", weight: 2, fillOpacity: 0.3 });
-// Load base map
-var map = L.map('map').setView([0.0236, 37.9062], 6);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 18,
-  attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
+    
+// DATA.CSV — make layer selectable
+    var dataCsvLayer = L.layerGroup();
+    $.get('./data.csv', function(csvString) {
+      var data = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
+      data.forEach(function(row, index) {
+        if (row.Latitude && row.Longitude && row['Site Name'] && row.Audio && row.Photo) {
+          var marker = L.circleMarker([row.Latitude, row.Longitude], {
+            radius: 6,
+            color: "black",
+            fillColor: "darkgreen",
+            fillOpacity: 1,
+            weight: 2
+          }).bindPopup(` 
+            <div class="popup-content">
+              <b>${row['Site Name']}</b><br>
+              <img src="${row.Photo}" alt="Photo of ${row['Site Name']}"><br>
+              <p>Sound Label: ${row['Sound Label']}</p>
+              <button id="play-btn-${index}" class="play-btn"><i class="fas fa-play"></i></button>
+              <div id="waveform-${index}" class="waveform"></div>
+            </div>
+          `).addTo(dataCsvLayer);
+
+          marker.on('popupopen', function() {
+            var wavesurfer = WaveSurfer.create({
+              container: `#waveform-${index}`,
+              waveColor: 'black',
+              progressColor: 'green',
+              barWidth: 2,
+              height: 50
+            });
+
+            wavesurfer.load(row.Audio);
+
+            var playButton = document.getElementById(`play-btn-${index}`);
+            playButton.onclick = function () {
+              if (wavesurfer.isPlaying()) {
+                wavesurfer.pause();
+                playButton.innerHTML = '<i class="fas fa-play"></i>';
+              } else {
+                wavesurfer.play();
+                playButton.innerHTML = '<i class="fas fa-pause"></i>';
+              }
+            };
+          });
+        }
+      });
+      controlLayers.addOverlay(dataCsvLayer, "Audio Data (data.csv)");
+    });
+
+// Load base map
+
 
 // Kenya bounding box (approximate)
 var kenyaBounds = [[-5.0, 33.5], [5.5, 42.0]];
@@ -234,54 +280,6 @@ legend.onAdd = function(map) {
 legend.addTo(map);
 
     
-// DATA.CSV — make layer selectable
-    var dataCsvLayer = L.layerGroup();
-    $.get('./data.csv', function(csvString) {
-      var data = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
-      data.forEach(function(row, index) {
-        if (row.Latitude && row.Longitude && row['Site Name'] && row.Audio && row.Photo) {
-          var marker = L.circleMarker([row.Latitude, row.Longitude], {
-            radius: 6,
-            color: "black",
-            fillColor: "darkgreen",
-            fillOpacity: 1,
-            weight: 2
-          }).bindPopup(` 
-            <div class="popup-content">
-              <b>${row['Site Name']}</b><br>
-              <img src="${row.Photo}" alt="Photo of ${row['Site Name']}"><br>
-              <p>Sound Label: ${row['Sound Label']}</p>
-              <button id="play-btn-${index}" class="play-btn"><i class="fas fa-play"></i></button>
-              <div id="waveform-${index}" class="waveform"></div>
-            </div>
-          `).addTo(dataCsvLayer);
-
-          marker.on('popupopen', function() {
-            var wavesurfer = WaveSurfer.create({
-              container: `#waveform-${index}`,
-              waveColor: 'black',
-              progressColor: 'green',
-              barWidth: 2,
-              height: 50
-            });
-
-            wavesurfer.load(row.Audio);
-
-            var playButton = document.getElementById(`play-btn-${index}`);
-            playButton.onclick = function () {
-              if (wavesurfer.isPlaying()) {
-                wavesurfer.pause();
-                playButton.innerHTML = '<i class="fas fa-play"></i>';
-              } else {
-                wavesurfer.play();
-                playButton.innerHTML = '<i class="fas fa-pause"></i>';
-              }
-            };
-          });
-        }
-      });
-      controlLayers.addOverlay(dataCsvLayer, "Audio Data (data.csv)");
-    });
 // Camera Trap Images
     var cameraTrapLayer = L.layerGroup();
     $.get('./cameratraps.csv', function(csvString) {
