@@ -188,7 +188,7 @@
       });
       controlLayers.addOverlay(dataCsvLayer, "Audio Data (data.csv)");
     });
-/ Camera Trap Images
+// Camera Trap Images
     var cameraTrapLayer = L.layerGroup();
     $.get('./cameratraps.csv', function(csvString) {
       var parsed = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
