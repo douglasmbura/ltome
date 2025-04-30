@@ -125,7 +125,7 @@
       }
 
       const tileUrl = `https://tile.openweathermap.org/map/${type}/{z}/{x}/{y}.png?appid=${apiKey}`;
-      weatherLayer = L.tileLayer(tileUrl, { opacity: 0.6 }).addTo(map);
+      weatherLayer = L.tileLayer(tileUrl, { opacity: 0.9 }).addTo(map);
       controlLayers.addOverlay(weatherLayer, `Weather (${type})`);
 
       document.getElementById("legend").innerText = weatherLegends[type] || "No legend available.";
