@@ -131,6 +131,17 @@
       document.getElementById("legend").innerText = weatherLegends[type] || "No legend available.";
     }
 
+    function addGeoJSONLayer(url, layerName, style) {
+      $.getJSON(url, function(data) {
+        var geoLayer = L.geoJSON(data, { style: style }).addTo(map);
+        controlLayers.addOverlay(geoLayer, layerName);
+      });
+    }
+
+    addGeoJSONLayer('namunyak.geojson', 'Namunyak Conservancy', { color: "orange", weight: 2, fillOpacity: 0.3 });
+    addGeoJSONLayer('samburu_county.geojson', 'Samburu County', { color: "green", weight: 2, fillOpacity: 0.3 });
+
+
     // Click weather popup
     map.on('click', function (e) {
       const lat = e.latlng.lat;
