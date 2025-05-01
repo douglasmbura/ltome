@@ -56,14 +56,6 @@
     <h1>Ltome-Katip Project</h1>
     <a href="about.html" target="_blank">About this project</a>
   </div>
-
-  <!-- Add NDVI Controls -->
-<div id="ndvi-controls">
-  <label for="ndvi-date">NDVI Date:</label>
-  <input type="date" id="ndvi-date">
-  <button onclick="updateNDVILayer()">Load NDVI Layer</button>
-</div>
-  
   <div id="weather-controls">
     <label for="weather-date">Weather Date:</label>
     <input type="datetime-local" id="weather-date">
@@ -247,7 +239,7 @@
           var popupContent = `
             <div style="text-align:center;">
               <b>Camera Trap Image</b><br>
-              <img src="${row.Image}" alt="Camera Image" style="width:auto; height:auto;"><br>
+              <img src="${row.Image}" alt="Camera Image" style="width:100%; height:auto;"><br>
               <small>${row['Site Name'] || ''}</small>
             </div>
           `;
@@ -279,6 +271,11 @@
       });
     });
   </script>
-
+<!-- Add NDVI Controls -->
+<div id="ndvi-controls">
+  <label for="ndvi-date">NDVI Date:</label>
+  <input type="date" id="ndvi-date">
+  <button onclick="updateNDVILayer()">Load NDVI Layer</button>
+</div>
 </body>
 </html>
