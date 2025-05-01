@@ -67,6 +67,11 @@
       <option value="clouds_new">Cloud Cover</option>
     </select>
     <button onclick="updateWeatherLayer()">Update Weather Layer</button>
+
+     <!-- NDVI Controls -->
+    <label for="ndvi-date">NDVI Date:</label>
+    <input type="date" id="ndvi-date">
+    <button onclick="updateNDVILayer()">Load NDVI Layer</button>
   </div>
 
   <div id="map"></div>
@@ -190,39 +195,35 @@
       controlLayers.addOverlay(dataCsvLayer, "Audio Data (data.csv)");
     });
 
+    // NDVI Layer Function
     function updateNDVILayer() {
-  const dateInput = document.getElementById("ndvi-date").value;
+      const dateInput = document.getElementById("ndvi-date").value;
 
-  if (!dateInput) {
-    alert("Please select an NDVI date");
-    return;
-  }
+      if (!dateInput) {
+        alert("Please select an NDVI date");
+        return;
+      }
 
-  // Process date to match GIBS or other NDVI data source requirements
-  const date = new Date(dateInput);
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(date.getUTCDate()).padStart(2, '0');
-  const formattedDate = `${year}-${month}-${day}`;
+      const date = new Date(dateInput);
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      const formattedDate = `${year}-${month}-${day}`;
 
-  // Example URL for NDVI data via NASA GIBS (replace with your source if different)
-  const baseUrl = `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_NDVI_16Day/default/${formattedDate}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png`;
+      const baseUrl = `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_NDVI_16Day/default/${formattedDate}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png`;
 
-  // Remove existing NDVI layer if it exists
-  if (typeof ndviLayer !== "undefined" && ndviLayer) {
-    map.removeLayer(ndviLayer);
-    controlLayers.removeLayer(ndviLayer);
-  }
+      if (ndviLayer) {
+        map.removeLayer(ndviLayer);
+        controlLayers.removeLayer(ndviLayer);
+      }
 
-  // Add new NDVI layer
-  ndviLayer = L.tileLayer(baseUrl, {
-    attribution: 'NASA GIBS / MODIS Terra NDVI',
-    opacity: 0.7
-  }).addTo(map);
+      ndviLayer = L.tileLayer(baseUrl, {
+        attribution: 'NASA GIBS / MODIS Terra NDVI',
+        opacity: 0.7
+      }).addTo(map);
 
-  // Add NDVI layer to control layers
-  controlLayers.addOverlay(ndviLayer, `NDVI on ${formattedDate}`);
-}
+      controlLayers.addOverlay(ndviLayer, `NDVI on ${formattedDate}`);
+    }
     
 // Camera Trap Images
     var cameraTrapLayer = L.layerGroup();
