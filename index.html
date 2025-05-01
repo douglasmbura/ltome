@@ -68,7 +68,6 @@
     </select>
     <button onclick="updateWeatherLayer()">Update Weather Layer</button>
      <!-- NDVI and EVI Controls -->
-<div id="veg-controls" style="position: fixed; top: 150px; left: 10px; background: white; padding: 5px; z-index: 1000; font-size: 14px;">
   <label for="veg-date">NDVI/EVI Date:</label>
   <input type="date" id="veg-date" max="<?= (new Date()).toISOString().split('T')[0] ?>">
   <select id="veg-type">
@@ -76,7 +75,6 @@
     <option value="MODIS_Terra_EVI_16Day">EVI (16-day)</option>
   </select>
   <button onclick="updateVegLayer()">Update Veg Layer</button>
-</div>
   </div>
 
   <div id="map"></div>
