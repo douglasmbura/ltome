@@ -190,48 +190,6 @@
       });
       controlLayers.addOverlay(dataCsvLayer, "Audio Data (data.csv)");
     });
-
-
-function updateVegLayer() {
-  const dateInput = document.getElementById("veg-date").value;
-  const typeInput = document.getElementById("veg-type").value;
-
-  if (!dateInput) {
-    alert("Please select a vegetation date");
-    return;
-  }
-
-  // Only MODIS_Terra_EVI_16Day is supported via NASA GIBS
-  const supportedTypes = {
-    "MODIS_Terra_EVI_16Day": "MODIS_Terra_EVI_16Day"
-  };
-
-  const layerName = supportedTypes[typeInput];
-  if (!layerName) {
-    alert("Unsupported vegetation layer type.");
-    return;
-  }
-
-  const date = new Date(dateInput);
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(date.getUTCDate()).padStart(2, '0');
-  const formattedDate = `${year}-${month}-${day}`;
-
-  const baseUrl = `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${layerName}/default/${formattedDate}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png`;
-
-  if (typeof vegLayer !== "undefined" && vegLayer) {
-    map.removeLayer(vegLayer);
-    controlLayers.removeLayer(vegLayer);
-  }
-
-  vegLayer = L.tileLayer(baseUrl, {
-    attribution: 'NASA GIBS / MODIS Terra EVI',
-    opacity: 0.7
-  }).addTo(map);
-
-  controlLayers.addOverlay(vegLayer, `${layerName} on ${formattedDate}`);
-}
     
 // Camera Trap Images
     var cameraTrapLayer = L.layerGroup();
@@ -281,11 +239,5 @@ function updateVegLayer() {
     });
   </script>
 
-  <select id="veg-type">
-  <option value="MODIS_Terra_EVI_16Day">MODIS Terra EVI (16-day)</option>
-</select>
-
-<input type="date" id="veg-date" />
-<button onclick="updateVegLayer()">Load Vegetation Layer</button>
 </body>
 </html>
