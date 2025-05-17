@@ -19,14 +19,47 @@
     body { margin: 0; padding: 0; }
     #map { position: absolute; top: 80px; bottom: 0; right: 0; left: 0; }
     .popup-content img { max-width: 100px; display: block; margin: 0 auto; }
+
     .navbar {
-      position: fixed; top: 0; left: 0; width: 100%; height: 50px;
+      position: fixed; top: 0; left: 0; width: 100%;
       background-color: #333; color: white; display: flex;
       align-items: center; padding: 0 20px; z-index: 1000;
+      flex-wrap: wrap;
     }
     .navbar img { height: 40px; margin-right: 10px; }
     .navbar h1 { font-size: 18px; margin: 0; flex-grow: 1; }
-    .navbar a { color: #00bfff; text-decoration: none; margin-left: 20px; }
+    .navbar-toggle {
+      display: none;
+      font-size: 20px;
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+    }
+    .navbar-links {
+      display: flex;
+      gap: 20px;
+    }
+    .navbar a {
+      color: #00bfff;
+      text-decoration: none;
+    }
+
+    @media (max-width: 600px) {
+      .navbar-toggle {
+        display: block;
+      }
+      .navbar-links {
+        flex-direction: column;
+        width: 100%;
+        display: none;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+      }
+      .navbar-links.open {
+        display: flex;
+      }
+    }
 
     #weather-controls {
       position: fixed; top: 50px; left: 10px; z-index: 1000;
@@ -46,17 +79,25 @@
       border: 1px solid #ccc;
     }
 
-    .waveform { width: 100%; height: 50px; background: #eee; margin-top: 10px; }
+    .waveform {
+      width: 100%; height: 50px; background: #eee; margin-top: 10px;
+    }
   </style>
 </head>
 <body>
   <div class="navbar">
     <img src="assets/logo.png" alt="Project Logo">
     <h1>Ltome-Katip Project</h1>
-    <a href="storymap.html" target="_blank">Storymap</a>
-    <a href="dashboard.html" target="_blank">Dashboard</a>
-    <a href="index.html" target="_blank">Main Map</a>
+    <button class="navbar-toggle" onclick="toggleMenu()">
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="navbar-links" id="menu-links">
+      <a href="storymap.html">Storymap</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="index.html">Main Map</a>
+    </div>
   </div>
+
   <div id="weather-controls">
     <label for="weather-date">Weather Date:</label>
     <input type="datetime-local" id="weather-date">
@@ -68,21 +109,35 @@
       <option value="clouds_new">Cloud Cover</option>
     </select>
     <button onclick="updateWeatherLayer()">Update Weather Layer</button>
-     <!-- NDVI and EVI Controls -->
-  <label for="veg-date">NDVI/EVI Date:</label>
-  <input type="date" id="veg-date" max="<?= (new Date()).toISOString().split('T')[0] ?>">
-  <select id="veg-type">
-    <option value="MODIS_Terra_NDVI_16Day">NDVI (16-day)</option>
-    <option value="MODIS_Terra_EVI_16Day">EVI (16-day)</option>
-  </select>
-  <button onclick="updateVegLayer()">Update Veg Layer</button>
+    <br><br>
+    <label for="veg-date">NDVI/EVI Date:</label>
+    <input type="date" id="veg-date">
+    <select id="veg-type">
+      <option value="MODIS_Terra_NDVI_16Day">NDVI (16-day)</option>
+      <option value="MODIS_Terra_EVI_16Day">EVI (16-day)</option>
+    </select>
+    <button onclick="updateVegLayer()">Update Veg Layer</button>
   </div>
 
   <div id="map"></div>
   <div id="legend" class="legend"></div>
 
   <script>
-    const apiKey = '740f4a49812c1dc35213618727748e3c'; // Replace if needed
+    function toggleMenu() {
+      const menu = document.getElementById("menu-links");
+      menu.classList.toggle("open");
+    }
+
+    document.querySelectorAll(".navbar-links a").forEach(link => {
+      link.addEventListener("click", () => {
+        const menu = document.getElementById("menu-links");
+        if (window.innerWidth <= 600) {
+          menu.classList.remove("open");
+        }
+      });
+    });
+
+    const apiKey = '740f4a49812c1dc35213618727748e3c';
 
     const weatherLegends = {
       temp_new: "Temperature: Blue (cold) → Red (hot)",
@@ -121,7 +176,6 @@
     function updateWeatherLayer() {
       let date = document.getElementById("weather-date").value;
       let type = document.getElementById("weather-type").value;
-
       if (!date) {
         alert("Please select a date/time.");
         return;
@@ -135,7 +189,6 @@
       const tileUrl = `https://tile.openweathermap.org/map/${type}/{z}/{x}/{y}.png?appid=${apiKey}`;
       weatherLayer = L.tileLayer(tileUrl, { opacity: 1.0 }).addTo(map);
       controlLayers.addOverlay(weatherLayer, `Weather (${type})`);
-
       document.getElementById("legend").innerText = weatherLegends[type] || "No legend available.";
     }
 
@@ -149,8 +202,6 @@
     addGeoJSONLayer('namunyak.geojson', 'Namunyak Conservancy', { color: "orange", weight: 2, fillOpacity: 0.3 });
     addGeoJSONLayer('samburu_county.geojson', 'Samburu County', { color: "green", weight: 2, fillOpacity: 0.3 });
 
-    
-// DATA.CSV — make layer selectable
     var dataCsvLayer = L.layerGroup();
     $.get('./data.csv', function(csvString) {
       var data = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
@@ -162,7 +213,7 @@
             fillColor: "darkgreen",
             fillOpacity: 1,
             weight: 2
-          }).bindPopup(` 
+          }).bindPopup(`
             <div class="popup-content">
               <b>${row['Site Name']}</b><br>
               <img src="${row.Photo}" alt="Photo of ${row['Site Name']}"><br>
@@ -198,37 +249,33 @@
       });
       controlLayers.addOverlay(dataCsvLayer, "Audio Data (data.csv)");
     });
-  
-var vegLayer;
-function updateVegLayer() {
-  var date = document.getElementById("veg-date").value;
-  var type = document.getElementById("veg-type").value;
-  if (!date) {
-    alert("Please select a vegetation date");
-    return;
-  }
 
-  const year = new Date(date).getUTCFullYear();
-  const month = String(new Date(date).getUTCMonth() + 1).padStart(2, '0');
-  const day = String(new Date(date).getUTCDate()).padStart(2, '0');
-  const formattedDate = `${year}-${month}-${day}`;
+    var vegLayer;
+    function updateVegLayer() {
+      var date = document.getElementById("veg-date").value;
+      var type = document.getElementById("veg-type").value;
+      if (!date) {
+        alert("Please select a vegetation date");
+        return;
+      }
 
-  const baseUrl = `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${type}/default/${formattedDate}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png`;
+      const formattedDate = new Date(date).toISOString().split('T')[0];
 
-  if (vegLayer) {
-    map.removeLayer(vegLayer);
-    controlLayers.removeLayer(vegLayer);
-  }
+      const baseUrl = `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${type}/default/${formattedDate}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png`;
 
-  vegLayer = L.tileLayer(baseUrl, {
-    attribution: 'NASA GIBS / MODIS',
-    opacity: 0.7
-  }).addTo(map);
+      if (vegLayer) {
+        map.removeLayer(vegLayer);
+        controlLayers.removeLayer(vegLayer);
+      }
 
-  controlLayers.addOverlay(vegLayer, `${type} on ${formattedDate}`);
-}
-    
-// Camera Trap Images
+      vegLayer = L.tileLayer(baseUrl, {
+        attribution: 'NASA GIBS / MODIS',
+        opacity: 0.7
+      }).addTo(map);
+
+      controlLayers.addOverlay(vegLayer, `${type} on ${formattedDate}`);
+    }
+
     var cameraTrapLayer = L.layerGroup();
     $.get('./cameratraps.csv', function(csvString) {
       var parsed = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
@@ -252,7 +299,6 @@ function updateVegLayer() {
       controlLayers.addOverlay(cameraTrapLayer, "Camera Trap Images");
     });
 
-    // Click weather popup
     map.on('click', function (e) {
       const lat = e.latlng.lat;
       const lon = e.latlng.lng;
@@ -266,27 +312,11 @@ function updateVegLayer() {
           ${data.weather[0].description}<br>
           Temp: ${data.main.temp}°C<br>
           Pressure: ${data.main.pressure} hPa<br>
-          Wind: ${data.wind.speed} m/s<br>
-          Clouds: ${data.clouds.all}%<br>
-          Time: ${new Date(data.dt * 1000).toLocaleString()}
+          Humidity: ${data.main.humidity}%
         `;
-        L.popup().setLatLng([lat, lon]).setContent(popupContent).openOn(map);
+        L.popup().setLatLng(e.latlng).setContent(popupContent).openOn(map);
       });
     });
   </script>
-  <!-- NDVI/EVI Legend -->
-<div id="veg-legend" style="position: fixed; bottom: 10px; left: 10px; background: rgba(255,255,255,0.8); padding: 10px; font-size: 12px; z-index: 1000;">
-  <b>Vegetation Index (NDVI / EVI)</b><br>
-  <div style="display: flex; align-items: center;">
-    <div style="width: 120px; height: 10px; background: linear-gradient(to right, #654321, #ffcc00, #00ff00); margin-right: 10px;"></div>
-    <div style="display: flex; justify-content: space-between; width: 100px;">
-      <span>-1</span><span>0</span><span>+1</span>
-    </div>
-  </div>
-  <small>Brown = Low Vegetation<br>Green = Dense Vegetation</small>
-</div>
-
-
-  
 </body>
 </html>
