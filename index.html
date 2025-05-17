@@ -17,35 +17,108 @@
 
   <style>
     body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
-    #map { position: absolute; top: 80px; bottom: 0; right: 0; left: 0; }
+    #map { 
+      position: absolute; 
+      top: 60px; /* Adjusted for navbar height */
+      bottom: 0; 
+      right: 0; 
+      left: 0; 
+    }
+    
     .popup-content img { max-width: 100px; display: block; margin: 0 auto; }
     
-    /* Responsive navbar */
+    /* Collapsible navbar for all devices */
     .navbar {
-      position: fixed; top: 0; left: 0; width: 100%; height: auto;
-      background-color: #333; color: white; display: flex;
-      flex-wrap: wrap; align-items: center; padding: 10px 20px; z-index: 1000;
-      box-sizing: border-box;
-    }
-    .navbar img { height: 40px; margin-right: 10px; }
-    .navbar h1 { font-size: 18px; margin: 0; flex-grow: 1; }
-    .navbar-menu { display: flex; flex-wrap: wrap; }
-    .navbar a { 
-      color: #00bfff; text-decoration: none; margin-left: 15px;
-      padding: 5px 0; white-space: nowrap;
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      width: 100%; 
+      background-color: #333; 
+      color: white; 
+      z-index: 1000;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
     
-    /* Responsive controls */
-    #weather-controls {
-      position: fixed; top: 80px; left: 10px; z-index: 1000;
-      background: rgba(255,255,255,0.9); padding: 8px; font-size: 13px;
-      border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.2);
-      max-width: calc(100% - 20px);
-      display: flex; flex-wrap: wrap; gap: 5px;
+    .navbar-header {
+      display: flex;
+      align-items: center;
+      padding: 10px 20px;
+      height: 60px;
+      box-sizing: border-box;
     }
+    
+    .navbar img { 
+      height: 40px; 
+      margin-right: 10px; 
+    }
+    
+    .navbar h1 { 
+      font-size: 18px; 
+      margin: 0; 
+      flex-grow: 1; 
+    }
+    
+    /* Hamburger menu button */
+    .navbar-toggle {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 5px 10px;
+      margin-left: 10px;
+    }
+    
+    /* Collapsible menu */
+    .navbar-menu {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      background-color: #444;
+    }
+    
+    .navbar-menu.expanded {
+      max-height: 300px;
+      padding: 10px 0;
+    }
+    
+    .navbar-menu a {
+      display: block;
+      color: #00bfff;
+      text-decoration: none;
+      padding: 10px 20px;
+      white-space: nowrap;
+    }
+    
+    .navbar-menu a:hover {
+      background-color: #555;
+    }
+    
+    /* Responsive weather controls */
+    #weather-controls {
+      position: fixed; 
+      top: 60px; 
+      left: 10px; 
+      z-index: 1000;
+      background: rgba(255,255,255,0.9); 
+      padding: 8px; 
+      font-size: 13px;
+      border-radius: 5px; 
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      max-width: calc(100% - 20px);
+      display: flex; 
+      flex-wrap: wrap; 
+      gap: 5px;
+    }
+    
     #weather-controls > * {
       flex: 1 1 auto;
       min-width: 120px;
+    }
+
+    /* Adjust map controls position */
+    .leaflet-top.leaflet-left {
+      top: 120px !important;
     }
 
     .legend {
@@ -63,22 +136,41 @@
       max-width: calc(100% - 40px);
     }
 
-    .waveform { width: 100%; height: 50px; background: #eee; margin-top: 10px; }
+    .waveform { 
+      width: 100%; 
+      height: 50px; 
+      background: #eee; 
+      margin-top: 10px; 
+    }
     
-    /* Mobile-specific styles */
+    /* Responsive adjustments */
     @media (max-width: 768px) {
-      .navbar { padding: 8px 10px; }
-      .navbar h1 { font-size: 16px; }
-      .navbar a { margin-left: 10px; font-size: 14px; }
-      .navbar img { height: 30px; }
+      .navbar-header {
+        padding: 8px 15px;
+        height: 50px;
+      }
+      
+      .navbar img { 
+        height: 30px; 
+      }
+      
+      .navbar h1 { 
+        font-size: 16px; 
+      }
       
       #weather-controls {
-        top: 70px;
+        top: 50px;
         font-size: 12px;
         padding: 5px;
       }
       
-      #map { top: 70px; }
+      #map { 
+        top: 50px; 
+      }
+      
+      .leaflet-top.leaflet-left {
+        top: 100px !important;
+      }
       
       #weather-controls input, 
       #weather-controls select, 
@@ -87,31 +179,24 @@
         padding: 3px;
       }
     }
-    
-    @media (max-width: 480px) {
-      .navbar { flex-direction: column; align-items: flex-start; height: auto; }
-      .navbar-menu { margin-top: 5px; width: 100%; }
-      .navbar a { margin: 5px 10px 5px 0; }
-      
-      #weather-controls {
-        top: 120px;
-        flex-direction: column;
-      }
-      
-      #map { top: 120px; }
-    }
   </style>
 </head>
 <body>
   <div class="navbar">
-    <img src="assets/logo.png" alt="Project Logo">
-    <h1>Ltome-Katip Project</h1>
-    <div class="navbar-menu">
+    <div class="navbar-header">
+      <img src="assets/logo.png" alt="Project Logo">
+      <h1>Ltome-Katip Project</h1>
+      <button class="navbar-toggle" id="menuToggle">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+    <div class="navbar-menu" id="navbarMenu">
       <a href="storymap.html">Storymap</a>
       <a href="dashboard.html">Dashboard</a>
       <a href="index.html">Main Map</a>
     </div>
   </div>
+  
   <div id="weather-controls">
     <label for="weather-date">Weather Date:</label>
     <input type="datetime-local" id="weather-date">
@@ -123,7 +208,6 @@
       <option value="clouds_new">Cloud Cover</option>
     </select>
     <button onclick="updateWeatherLayer()">Update Weather Layer</button>
-     <!-- NDVI and EVI Controls -->
     <label for="veg-date">NDVI/EVI Date:</label>
     <input type="date" id="veg-date" max="<?= (new Date()).toISOString().split('T')[0] ?>">
     <select id="veg-type">
@@ -137,6 +221,26 @@
   <div id="legend" class="legend"></div>
 
   <script>
+    // Mobile menu toggle
+    document.getElementById('menuToggle').addEventListener('click', function() {
+      const menu = document.getElementById('navbarMenu');
+      menu.classList.toggle('expanded');
+      this.querySelector('i').classList.toggle('fa-bars');
+      this.querySelector('i').classList.toggle('fa-times');
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', function(event) {
+      const navbar = document.querySelector('.navbar');
+      const toggle = document.getElementById('menuToggle');
+      if (!navbar.contains(event.target) {
+        const menu = document.getElementById('navbarMenu');
+        menu.classList.remove('expanded');
+        toggle.querySelector('i').classList.add('fa-bars');
+        toggle.querySelector('i').classList.remove('fa-times');
+      }
+    });
+
     const apiKey = '740f4a49812c1dc35213618727748e3c'; // Replace if needed
 
     const weatherLegends = {
@@ -153,7 +257,15 @@
       scrollWheelZoom: true
     });
 
-    let controlLayers = L.control.layers(null, null, { position: "topright", collapsed: false }).addTo(map);
+    // Move zoom control to avoid overlap with weather controls
+    L.control.zoom({
+      position: 'topright'
+    }).addTo(map);
+
+    let controlLayers = L.control.layers(null, null, { 
+      position: "topright", 
+      collapsed: false 
+    }).addTo(map);
 
     let baseMaps = {
       "OSM Standard": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -204,7 +316,6 @@
     addGeoJSONLayer('namunyak.geojson', 'Namunyak Conservancy', { color: "orange", weight: 2, fillOpacity: 0.3 });
     addGeoJSONLayer('samburu_county.geojson', 'Samburu County', { color: "green", weight: 2, fillOpacity: 0.3 });
 
-    
     // DATA.CSV — make layer selectable
     var dataCsvLayer = L.layerGroup();
     $.get('./data.csv', function(csvString) {
