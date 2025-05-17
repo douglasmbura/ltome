@@ -1,42 +1,123 @@
-<!-- Updated HTML for Global Weather Layers and Legends -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>Ltome-Katip Project</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta charset="utf-8">
 
-  <!-- Leaflet CSS/JS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 
-  <!-- jQuery, PapaParse, Font Awesome, Wavesurfer -->
+  <!-- jQuery, PapaParse, WaveSurfer, FontAwesome -->
   <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/wavesurfer.js/6.6.3/wavesurfer.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 
   <style>
-    body { margin: 0; padding: 0; }
-    #map { position: absolute; top: 80px; bottom: 0; right: 0; left: 0; }
-    .popup-content img { max-width: 100px; display: block; margin: 0 auto; }
-    .navbar {
-      position: fixed; top: 0; left: 0; width: 100%; height: 50px;
-      background-color: #333; color: white; display: flex;
-      align-items: center; padding: 0 20px; z-index: 1000;
+    * {
+      box-sizing: border-box;
     }
-    .navbar img { height: 40px; margin-right: 10px; }
-    .navbar h1 { font-size: 18px; margin: 0; flex-grow: 1; }
-    .navbar a { color: #00bfff; text-decoration: none; margin-left: 20px; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    /* NAVIGATION BAR */
+    .navbar {
+      background-color: #333;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      height: 60px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+    }
+
+    .navbar-left {
+      display: flex;
+      align-items: center;
+    }
+
+    .navbar img {
+      height: 40px;
+      margin-right: 10px;
+    }
+
+    .navbar h1 {
+      font-size: 18px;
+      margin: 0;
+    }
+
+    .navbar-right {
+      display: flex;
+      gap: 20px;
+    }
+
+    .navbar-right a {
+      color: #00bfff;
+      text-decoration: none;
+      font-size: 15px;
+    }
+
+    /* MOBILE MENU */
+    .menu-toggle {
+      display: none;
+      font-size: 24px;
+      color: white;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    .mobile-menu {
+      display: none;
+      flex-direction: column;
+      background-color: #333;
+      width: 100%;
+      position: absolute;
+      top: 60px;
+      left: 0;
+      padding: 10px 0;
+      z-index: 1000;
+    }
+
+    .mobile-menu a {
+      color: #00bfff;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-top: 1px solid #444;
+    }
+
+    /* MAP AND CONTROLS */
+    #map {
+      position: absolute;
+      top: 60px;
+      bottom: 0;
+      right: 0;
+      left: 0;
+    }
 
     #weather-controls {
-      position: fixed; top: 50px; left: 10px; z-index: 1000;
-      background: white; padding: 8px; font-size: 13px;
+      position: fixed;
+      top: 60px;
+      left: 10px;
+      z-index: 1000;
+      background: white;
+      padding: 10px;
+      font-size: 13px;
+      border-radius: 4px;
+      box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
     }
 
     .legend {
-      line-height: 18px;
-      color: #555;
       background: white;
       padding: 6px;
       font-size: 13px;
@@ -45,17 +126,67 @@
       left: 10px;
       z-index: 999;
       border: 1px solid #ccc;
+      border-radius: 4px;
     }
 
-    .waveform { width: 100%; height: 50px; background: #eee; margin-top: 10px; }
+    .waveform {
+      width: 100%;
+      height: 50px;
+      background: #eee;
+      margin-top: 10px;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .navbar-right {
+        display: none;
+      }
+
+      .menu-toggle {
+        display: block;
+      }
+
+      .mobile-menu.show {
+        display: flex;
+      }
+
+      #weather-controls {
+        left: 0;
+        right: 0;
+        top: 120px;
+        font-size: 12px;
+      }
+
+      #map {
+        top: 120px;
+      }
+    }
   </style>
 </head>
 <body>
+
+  <!-- Navigation Bar -->
   <div class="navbar">
-    <img src="assets/logo.png" alt="Project Logo">
-    <h1>Ltome-Katip Project</h1>
-    <a href="about.html" target="_blank">About this project</a>
+    <div class="navbar-left">
+      <img src="assets/logo.png" alt="Project Logo">
+      <h1>Ltome-Katip Project</h1>
+    </div>
+    <button class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
+    <div class="navbar-right">
+      <a href="storymap.html">Storymap</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="map.html">Main Map</a>
+    </div>
   </div>
+
+  <!-- Collapsible Mobile Menu -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="storymap.html">Storymap</a>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="map.html">Main Map</a>
+  </div>
+
+  <!-- Weather and Vegetation Controls -->
   <div id="weather-controls">
     <label for="weather-date">Weather Date:</label>
     <input type="datetime-local" id="weather-date">
@@ -67,21 +198,27 @@
       <option value="clouds_new">Cloud Cover</option>
     </select>
     <button onclick="updateWeatherLayer()">Update Weather Layer</button>
-     <!-- NDVI and EVI Controls -->
-  <label for="veg-date">NDVI/EVI Date:</label>
-  <input type="date" id="veg-date" max="<?= (new Date()).toISOString().split('T')[0] ?>">
-  <select id="veg-type">
-    <option value="MODIS_Terra_NDVI_16Day">NDVI (16-day)</option>
-    <option value="MODIS_Terra_EVI_16Day">EVI (16-day)</option>
-  </select>
-  <button onclick="updateVegLayer()">Update Veg Layer</button>
+
+    <br><br>
+    <label for="veg-date">NDVI/EVI Date:</label>
+    <input type="date" id="veg-date">
+    <select id="veg-type">
+      <option value="MODIS_Terra_NDVI_16Day">NDVI (16-day)</option>
+      <option value="MODIS_Terra_EVI_16Day">EVI (16-day)</option>
+    </select>
+    <button onclick="updateVegLayer()">Update Veg Layer</button>
   </div>
 
+  <!-- Map and Legend -->
   <div id="map"></div>
   <div id="legend" class="legend"></div>
 
   <script>
-    const apiKey = '740f4a49812c1dc35213618727748e3c'; // Replace if needed
+    function toggleMenu() {
+      document.getElementById("mobileMenu").classList.toggle("show");
+    }
+
+    const apiKey = '740f4a49812c1dc35213618727748e3c';
 
     const weatherLegends = {
       temp_new: "Temperature: Blue (cold) → Red (hot)",
@@ -99,7 +236,7 @@
 
     let controlLayers = L.control.layers(null, null, { position: "topright", collapsed: false }).addTo(map);
 
-    let baseMaps = {
+    const baseMaps = {
       "OSM Standard": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
       }).addTo(map),
@@ -116,15 +253,10 @@
     }
 
     let weatherLayer;
-
     function updateWeatherLayer() {
-      let date = document.getElementById("weather-date").value;
-      let type = document.getElementById("weather-type").value;
-
-      if (!date) {
-        alert("Please select a date/time.");
-        return;
-      }
+      const date = document.getElementById("weather-date").value;
+      const type = document.getElementById("weather-type").value;
+      if (!date) return alert("Please select a date/time.");
 
       if (weatherLayer) {
         map.removeLayer(weatherLayer);
@@ -134,62 +266,75 @@
       const tileUrl = `https://tile.openweathermap.org/map/${type}/{z}/{x}/{y}.png?appid=${apiKey}`;
       weatherLayer = L.tileLayer(tileUrl, { opacity: 1.0 }).addTo(map);
       controlLayers.addOverlay(weatherLayer, `Weather (${type})`);
-
       document.getElementById("legend").innerText = weatherLegends[type] || "No legend available.";
     }
 
-    function addGeoJSONLayer(url, layerName, style) {
-      $.getJSON(url, function(data) {
-        var geoLayer = L.geoJSON(data, { style: style }).addTo(map);
-        controlLayers.addOverlay(geoLayer, layerName);
+    function updateVegLayer() {
+      const date = document.getElementById("veg-date").value;
+      const type = document.getElementById("veg-type").value;
+      if (!date) return alert("Please select a vegetation date.");
+
+      const formattedDate = new Date(date).toISOString().split("T")[0];
+      const baseUrl = `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${type}/default/${formattedDate}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png`;
+
+      if (vegLayer) {
+        map.removeLayer(vegLayer);
+        controlLayers.removeLayer(vegLayer);
+      }
+
+      vegLayer = L.tileLayer(baseUrl, {
+        attribution: 'NASA GIBS / MODIS',
+        opacity: 0.7
+      }).addTo(map);
+
+      controlLayers.addOverlay(vegLayer, `${type} on ${formattedDate}`);
+    }
+
+    // Add GeoJSON boundaries
+    function addGeoJSONLayer(url, name, style) {
+      $.getJSON(url, function (data) {
+        const layer = L.geoJSON(data, { style }).addTo(map);
+        controlLayers.addOverlay(layer, name);
       });
     }
 
     addGeoJSONLayer('namunyak.geojson', 'Namunyak Conservancy', { color: "orange", weight: 2, fillOpacity: 0.3 });
     addGeoJSONLayer('samburu_county.geojson', 'Samburu County', { color: "green", weight: 2, fillOpacity: 0.3 });
 
-    
-// DATA.CSV — make layer selectable
-    var dataCsvLayer = L.layerGroup();
-    $.get('./data.csv', function(csvString) {
-      var data = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
-      data.forEach(function(row, index) {
-        if (row.Latitude && row.Longitude && row['Site Name'] && row.Audio && row.Photo) {
-          var marker = L.circleMarker([row.Latitude, row.Longitude], {
-            radius: 6,
-            color: "black",
-            fillColor: "darkgreen",
-            fillOpacity: 1,
-            weight: 2
-          }).bindPopup(` 
+    // Data points from data.csv
+    let dataCsvLayer = L.layerGroup();
+    $.get('./data.csv', function (csvString) {
+      let data = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
+      data.forEach((row, i) => {
+        if (row.Latitude && row.Longitude && row.Audio && row.Photo) {
+          let marker = L.circleMarker([row.Latitude, row.Longitude], {
+            radius: 6, color: "black", fillColor: "darkgreen", fillOpacity: 1, weight: 2
+          }).bindPopup(`
             <div class="popup-content">
               <b>${row['Site Name']}</b><br>
-              <img src="${row.Photo}" alt="Photo of ${row['Site Name']}"><br>
+              <img src="${row.Photo}" alt="Photo"><br>
               <p>Sound Label: ${row['Sound Label']}</p>
-              <button id="play-btn-${index}" class="play-btn"><i class="fas fa-play"></i></button>
-              <div id="waveform-${index}" class="waveform"></div>
+              <button id="play-btn-${i}" class="play-btn"><i class="fas fa-play"></i></button>
+              <div id="waveform-${i}" class="waveform"></div>
             </div>
           `).addTo(dataCsvLayer);
 
-          marker.on('popupopen', function() {
-            var wavesurfer = WaveSurfer.create({
-              container: `#waveform-${index}`,
+          marker.on('popupopen', function () {
+            let wavesurfer = WaveSurfer.create({
+              container: `#waveform-${i}`,
               waveColor: 'black',
               progressColor: 'green',
               barWidth: 2,
               height: 50
             });
-
             wavesurfer.load(row.Audio);
-
-            var playButton = document.getElementById(`play-btn-${index}`);
-            playButton.onclick = function () {
+            document.getElementById(`play-btn-${i}`).onclick = () => {
               if (wavesurfer.isPlaying()) {
                 wavesurfer.pause();
-                playButton.innerHTML = '<i class="fas fa-play"></i>';
+                this.innerHTML = '<i class="fas fa-play"></i>';
               } else {
                 wavesurfer.play();
-                playButton.innerHTML = '<i class="fas fa-pause"></i>';
+                this.innerHTML = '<i class="fas fa-pause"></i>';
               }
             };
           });
@@ -197,95 +342,42 @@
       });
       controlLayers.addOverlay(dataCsvLayer, "Audio Data (data.csv)");
     });
-  
-var vegLayer;
-function updateVegLayer() {
-  var date = document.getElementById("veg-date").value;
-  var type = document.getElementById("veg-type").value;
-  if (!date) {
-    alert("Please select a vegetation date");
-    return;
-  }
 
-  const year = new Date(date).getUTCFullYear();
-  const month = String(new Date(date).getUTCMonth() + 1).padStart(2, '0');
-  const day = String(new Date(date).getUTCDate()).padStart(2, '0');
-  const formattedDate = `${year}-${month}-${day}`;
-
-  const baseUrl = `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${type}/default/${formattedDate}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png`;
-
-  if (vegLayer) {
-    map.removeLayer(vegLayer);
-    controlLayers.removeLayer(vegLayer);
-  }
-
-  vegLayer = L.tileLayer(baseUrl, {
-    attribution: 'NASA GIBS / MODIS',
-    opacity: 0.7
-  }).addTo(map);
-
-  controlLayers.addOverlay(vegLayer, `${type} on ${formattedDate}`);
-}
-    
-// Camera Trap Images
-    var cameraTrapLayer = L.layerGroup();
-    $.get('./cameratraps.csv', function(csvString) {
-      var parsed = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
-      parsed.forEach(function(row) {
+    // Camera traps
+    let cameraTrapLayer = L.layerGroup();
+    $.get('./cameratraps.csv', function (csvString) {
+      let data = Papa.parse(csvString, { header: true, dynamicTyping: true }).data;
+      data.forEach(row => {
         if (row.Latitude && row.Longitude && row.Image) {
-          var iconCamera = L.icon({
+          let icon = L.icon({
             iconUrl: 'https://cdn-icons-png.flaticon.com/512/1043/1043926.png',
             iconSize: [30, 30],
             iconAnchor: [15, 30],
             popupAnchor: [0, -30]
           });
-          var popupContent = `
-            <div style="text-align:center;">
-              <img src="${row.Image}" alt="Camera Image" style="max-width: 400px; height:auto;"><br>
-              <small>${row['Site Name'] || ''}</small>
-            </div>
-          `;
-          L.marker([row.Latitude, row.Longitude], { icon: iconCamera }).bindPopup(popupContent).addTo(cameraTrapLayer);
+          let popup = `<div style="text-align:center;"><img src="${row.Image}" style="max-width:400px;"><br><small>${row['Site Name'] || ''}</small></div>`;
+          L.marker([row.Latitude, row.Longitude], { icon }).bindPopup(popup).addTo(cameraTrapLayer);
         }
       });
       controlLayers.addOverlay(cameraTrapLayer, "Camera Trap Images");
     });
 
-    // Click weather popup
     map.on('click', function (e) {
-      const lat = e.latlng.lat;
-      const lon = e.latlng.lng;
-
-      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+      const { lat, lng } = e.latlng;
+      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${apiKey}&units=metric`;
 
       $.get(url, function (data) {
-        const popupContent = `
+        let content = `
           <b>Weather</b><br>
-          <img src="http://openweathermap.org/img/wn/${data.weather[0].icon}.png" alt="icon"><br>
+          <img src="http://openweathermap.org/img/wn/${data.weather[0].icon}.png"><br>
           ${data.weather[0].description}<br>
           Temp: ${data.main.temp}°C<br>
-          Pressure: ${data.main.pressure} hPa<br>
-          Wind: ${data.wind.speed} m/s<br>
-          Clouds: ${data.clouds.all}%<br>
-          Time: ${new Date(data.dt * 1000).toLocaleString()}
+          Pressure: ${data.main.pressure} hPa
         `;
-        L.popup().setLatLng([lat, lon]).setContent(popupContent).openOn(map);
+        L.popup().setLatLng([lat, lng]).setContent(content).openOn(map);
       });
     });
   </script>
-  <!-- NDVI/EVI Legend -->
-<div id="veg-legend" style="position: fixed; bottom: 10px; left: 10px; background: rgba(255,255,255,0.8); padding: 10px; font-size: 12px; z-index: 1000;">
-  <b>Vegetation Index (NDVI / EVI)</b><br>
-  <div style="display: flex; align-items: center;">
-    <div style="width: 120px; height: 10px; background: linear-gradient(to right, #654321, #ffcc00, #00ff00); margin-right: 10px;"></div>
-    <div style="display: flex; justify-content: space-between; width: 100px;">
-      <span>-1</span><span>0</span><span>+1</span>
-    </div>
-  </div>
-  <small>Brown = Low Vegetation<br>Green = Dense Vegetation</small>
-</div>
 
-
-  
 </body>
 </html>
